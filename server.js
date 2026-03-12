@@ -3,6 +3,26 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('./database/db');
+// ---- Create default user if not exists ----
+const defaultEmail = "Vent@icloud.com";
+const defaultPassword = "Scretkey223";
+const defaultUsername = "Vent";
+
+const existingUser = db.prepare("SELECT * FROM users WHERE email = ?").get(defaultEmail);
+
+if (!existingUser) {
+
+    const hashed = bcrypt.hashSync(defaultPassword, 10);
+
+    db.prepare(`
+        INSERT INTO users (username, email, password_hash)
+        VALUES (?, ?, ?)
+    `).run(defaultUsername, defaultEmail, hashed);
+
+    console.log("Default user created:");
+    console.log("Email:", defaultEmail);
+    console.log("Password:", defaultPassword);
+}
 
 const app = express();
 const PORT = 3000;
