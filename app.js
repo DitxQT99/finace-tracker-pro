@@ -58,7 +58,7 @@
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       if (data.code === "DATABASE_NOT_CONFIGURED") {
-        showAuthNotice("Database Grey Finance belum tersambung. Hubungkan Neon PostgreSQL ke project Vercel, lalu redeploy.", true);
+        showDatabaseNotice();
       }
       throw new Error(data.error || "Request failed. Try again.");
     }
