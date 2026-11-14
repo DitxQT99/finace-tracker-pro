@@ -50,12 +50,12 @@
   function hideAuthNotice() { $("#authNotice").classList.add("hidden"); }
   function showDatabaseNotice() {
     const el=$("#authNotice");
-    el.replaceChildren(document.createTextNode("Database belum tersambung. "));
+    el.replaceChildren(document.createTextNode("Backend belum dikonfigurasi. "));
     const link=document.createElement("a");
-    link.href="https://vercel.com/marketplace/neon";
+    link.href="https://github.com/DitxQT99/finace-tracker-pro/blob/main/GITHUB_BACKEND_SETUP.md";
     link.target="_blank";
     link.rel="noopener noreferrer";
-    link.textContent="Connect Neon PostgreSQL";
+    link.textContent="Lihat panduan setup backend";
     el.appendChild(link);
     el.classList.remove("hidden");
     el.classList.add("info");
@@ -69,7 +69,7 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (data.code === "DATABASE_NOT_CONFIGURED") {
+      if (data.code === "GITHUB_NOT_CONFIGURED") {
         showDatabaseNotice();
       }
       throw new Error(data.error || "Request failed. Try again.");
