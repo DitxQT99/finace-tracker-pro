@@ -11,7 +11,7 @@ module.exports = async function(req, res) {
     if (!session) return;
     const user = await getUserById(session.id);
     if (!user) return res.status(401).json({error:"Akun tidak ditemukan."});
-    const month = /^\\d{4}-\\d{2}$/.test(req.query.month || "") ? req.query.month : "";
+    const month = /^\d{4}-\d{2}$/.test(req.query.month || "") ? req.query.month : "";
     const rows = (user.transactions || []).filter(row => !month || String(row.date).startsWith(month))
       .sort((a,b) => String(b.date).localeCompare(String(a.date)));
     const headers = ["Date","Type","Category","Amount","Note"];
