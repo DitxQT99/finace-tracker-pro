@@ -1,28 +1,25 @@
 # Grey Finance
 
-Grey Finance is a mobile-first personal finance dashboard for recording income and expenses, tracking budgets, planning savings goals, and reviewing cash flow.
+Grey Finance is a mobile-first personal finance dashboard for income and expenses, category budgets, savings goals, and cash-flow reports.
 
-## Stack
+## Backend
 
-- Static HTML/CSS/JavaScript interface
-- Vercel serverless API functions
-- Separate private GitHub repository as a small-project JSON data store
-- bcryptjs password hashing and JWT sessions in HttpOnly cookies
+- Vercel Functions for the API
+- Vercel Blob **Private Storage** for account data
+- bcryptjs password hashing
+- Signed HttpOnly session cookies
 
-## Backend setup (free tier)
+The private Blob store is connected to the Vercel project. Its read/write credential is injected into the server environment by Vercel and is never shipped to the browser.
 
-Follow [GITHUB_BACKEND_SETUP.md](./GITHUB_BACKEND_SETUP.md). Create a separate **private** repository for data and a fine-grained GitHub token with only Contents read/write permission. Add `GITHUB_DATA_REPO` and `GITHUB_TOKEN` as encrypted Vercel environment variables. Keep the existing `JWT_SECRET` configured.
+## Free usage
 
-Do not use this public source repository as the data store. Never expose `GITHUB_TOKEN` in frontend code.
-
-## Local development
-
-Copy `.env.example` to `.env.local`, fill in the private repository and token, set a strong `JWT_SECRET`, install dependencies, and run with `vercel dev`.
+Vercel Hobby includes monthly Blob allowances (currently 1 GB storage, 10 GB data transfer, 10,000 simple operations, and 2,000 advanced operations). If the free quota is exceeded, access pauses until the quota resets; Hobby does not charge overage. See the official [Vercel Blob pricing](https://vercel.com/docs/vercel-blob/usage-and-pricing).
 
 ## Security and limitations
 
+- Account JSON is stored in a private Blob store, not a public URL.
 - Passwords are hashed with bcryptjs.
-- Sessions use HttpOnly, SameSite=Lax cookies.
-- User records are stored separately under hashed email index and user ID JSON paths.
-- GitHub commit history retains previous data versions. This is a free option for a small personal project, not a bank-grade or high-volume database.
-- Grey Finance is a record-keeping tool, not a bank or financial institution.
+- Session cookies are HttpOnly and SameSite=Lax.
+- Per-account records use opaque UUIDs and hashed email indexes.
+- Conditional writes protect updates from silently overwriting a concurrent change.
+- This is a personal record-keeping app, not a bank or financial institution.
