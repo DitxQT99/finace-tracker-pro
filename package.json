@@ -1,0 +1,16 @@
+{
+  "name": "grey-finance",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Grey Finance — secure personal finance dashboard",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node -e \"console.log('Grey Finance runs on Vercel Functions')\"",
+    "check": "node --check app.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
