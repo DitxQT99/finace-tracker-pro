@@ -1,5 +1,5 @@
 const { randomUUID } = require("crypto");
-const { getDB, ensureSchema, requireUser, handleError, validDate } = require("./_lib/core");
+const { getDB, ensureSchema, requireUser, handleError, validDate } = require("../lib/core");
 module.exports = async function handler(req,res) {
   res.setHeader("Cache-Control","no-store");
   try {
