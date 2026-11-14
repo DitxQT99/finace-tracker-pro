@@ -65,6 +65,9 @@ function handleError(res, error) {
   return res.status(500).json({ error: "Terjadi kendala pada server. Coba lagi sebentar." });
 }
 function validDate(value) {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + "T00:00:00Z"));
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parts = value.split("-").map(Number);
+  const date = new Date(Date.UTC(parts[0], parts[1]-1, parts[2]));
+  return date.getUTCFullYear()===parts[0] && date.getUTCMonth()+1===parts[1] && date.getUTCDate()===parts[2];
 }
 module.exports = { getDB, ensureSchema, getSession, requireUser, setSessionCookie, clearSessionCookie, handleError, validDate };
