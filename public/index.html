@@ -1,14 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Tracker Pro</title>
-    <script>
-        window.location.href = '/login.html';
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1110">
+  <meta name="description" content="Grey Finance — kendalikan arus uang, anggaran, dan tujuan tabungan dalam satu dashboard.">
+  <title>Grey Finance — Personal Finance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    Redirecting to login...
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-brand">
+      <div class="brand-mark">G<span>✦</span></div>
+      <div><strong>grey<span>finance</span></strong><small>PERSONAL MONEY SPACE</small></div>
+    </div>
+    <div class="auth-layout">
+      <div class="auth-story">
+        <div class="eyebrow"><span class="live-dot"></span> YOUR MONEY, IN BETTER FOCUS</div>
+        <h1>Make every<br><em>move</em> count.</h1>
+        <p>Kelola pemasukan, pengeluaran, anggaran, dan target tabungan dalam satu ruang yang lebih tenang.</p>
+        <div class="auth-proof"><span class="proof-icon">↗</span><div><b>Clarity over chaos.</b><small>Semua alur uang terlihat, tanpa ribet.</small></div></div>
+        <div class="auth-orbit orbit-a"></div><div class="auth-orbit orbit-b"></div>
+      </div>
+      <div class="auth-card">
+        <div class="auth-card-head"><span class="eyebrow">WELCOME TO GREY</span><h2 id="authTitle">Masuk ke akunmu</h2><p id="authSubtitle">Lanjutkan perjalanan finansialmu.</p></div>
+        <form id="loginForm" class="auth-form">
+          <label>Email address<input id="loginEmail" type="email" autocomplete="email" placeholder="nama@email.com" required></label>
+          <label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Masukkan password" minlength="8" required></label>
+          <button class="btn btn-primary auth-submit" type="submit">Masuk <span>↗</span></button>
+          <p class="auth-switch">Belum punya akun? <button type="button" data-auth-mode="register">Buat akun</button></p>
+        </form>
+        <form id="registerForm" class="auth-form hidden">
+          <label>Nama lengkap<input id="registerName" type="text" autocomplete="name" placeholder="Nama kamu" maxlength="60" required></label>
+          <label>Email address<input id="registerEmail" type="email" autocomplete="email" placeholder="nama@email.com" required></label>
+          <label>Password<input id="registerPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter" minlength="8" required></label>
+          <button class="btn btn-primary auth-submit" type="submit">Buat akun <span>↗</span></button>
+          <p class="auth-switch">Sudah punya akun? <button type="button" data-auth-mode="login">Masuk</button></p>
+        </form>
+        <div id="authNotice" class="notice hidden" role="status"></div>
+        <p class="auth-foot">PRIVATE BY DESIGN <span>•</span> DATA AKUN DIPISAH PER PENGGUNA</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand"><div class="brand-mark small">G<span>✦</span></div><div><strong>grey<span>finance</span></strong><small>PERSONAL FINANCE</small></div></div>
+      <div class="side-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Navigasi utama">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span>Overview</button>
+        <button class="nav-item" data-view="transactions"><span class="nav-icon">⇄</span>Transactions</button>
+        <button class="nav-item" data-view="budgets"><span class="nav-icon">▤</span>Budgets</button>
+        <button class="nav-item" data-view="goals"><span class="nav-icon">◎</span>Saving goals</button>
+        <button class="nav-item" data-view="reports"><span class="nav-icon">▥</span>Reports</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="side-label">PREFERENCES</div>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
+        <div class="side-profile"><div class="avatar" id="userAvatar">G</div><div class="profile-copy"><b id="sideUserName">Grey User</b><small id="sideUserEmail">Personal account</small></div><button id="logoutBtn" class="icon-button logout" title="Keluar" aria-label="Keluar">↗</button></div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-left"><button id="menuToggle" class="icon-button menu-toggle" aria-label="Buka menu">☰</button><div><div class="eyebrow" id="dateLabel">PERSONAL FINANCE / TODAY</div><h1 id="pageTitle">Overview</h1></div></div>
+        <div class="topbar-actions"><button id="privacyToggle" class="icon-button" title="Sembunyikan saldo" aria-label="Sembunyikan saldo">◉</button><button id="themeToggle" class="icon-button" title="Ganti tema" aria-label="Ganti tema">☼</button><button class="btn btn-primary add-top" id="addTransactionBtn"><span>＋</span> Add transaction</button></div>
+      </header>
+
+      <section id="view-overview" class="view active">
+        <div class="welcome-row"><div><div class="eyebrow">YOUR FINANCIAL SNAPSHOT</div><h2>Good day, <span id="welcomeName">there</span><span class="wave">✦</span></h2><p>Ini ringkasan kondisi keuanganmu saat ini.</p></div><div class="month-pill"><span class="live-dot"></span><span id="currentMonthLabel">This month</span></div></div>
+        <div class="hero-balance">
+          <div class="balance-top"><div><span class="subtle-label">TOTAL BALANCE</span><span class="balance-caption">All recorded activity</span></div><span class="balance-badge"><span class="live-dot"></span> LIVE OVERVIEW</span></div>
+          <div class="balance-value" id="balanceValue">Rp0</div>
+          <div class="balance-bottom"><div class="balance-mini"><span class="mini-arrow income-arrow">↗</span><div><small>Total income</small><b id="heroIncome">Rp0</b></div></div><div class="balance-mini"><span class="mini-arrow expense-arrow">↘</span><div><small>Total expense</small><b id="heroExpense">Rp0</b></div></div><div class="balance-note" id="balanceNote">Your money at a glance</div></div>
+          <div class="hero-glow"></div>
+        </div>
+        <div class="metric-grid">
+          <article class="metric-card"><div class="metric-head"><span>Income this month</span><span class="metric-icon green">↗</span></div><strong id="monthIncome">Rp0</strong><small class="metric-foot">Money coming in</small></article>
+          <article class="metric-card"><div class="metric-head"><span>Expense this month</span><span class="metric-icon red">↘</span></div><strong id="monthExpense">Rp0</strong><small class="metric-foot">Money going out</small></article>
+          <article class="metric-card"><div class="metric-head"><span>Net cash flow</span><span class="metric-icon violet">⌁</span></div><strong id="netFlow">Rp0</strong><small class="metric-foot">Income minus expense</small></article>
+          <article class="metric-card"><div class="metric-head"><span>Saving rate</span><span class="metric-icon blue">◎</span></div><strong id="savingRate">0%</strong><small class="metric-foot">This month's income saved</small></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel chart-panel">
+            <div class="panel-head"><div><span class="eyebrow">CASH FLOW</span><h3>Money movement</h3></div><select id="chartRange" class="select-quiet" aria-label="Rentang grafik"><option value="6">Last 6 months</option><option value="3">Last 3 months</option></select></div>
+            <div class="chart-legend"><span><i class="legend-dot income-dot"></i>Income</span><span><i class="legend-dot expense-dot"></i>Expense</span></div>
+            <div id="cashflowChart" class="cashflow-chart"><div class="chart-placeholder">Your cash flow will appear here.</div></div>
+          </article>
+          <article class="panel category-panel"><div class="panel-head"><div><span class="eyebrow">SPENDING BREAKDOWN</span><h3>Top categories</h3></div><button class="text-button" data-go-view="reports">See report ↗</button></div><div id="categoryList" class="category-list"><div class="empty-mini">No spending data yet.</div></div></article>
+        </div>
+        <div class="content-grid lower-grid">
+          <article class="panel"><div class="panel-head"><div><span class="eyebrow">RECENT ACTIVITY</span><h3>Latest transactions</h3></div><button class="text-button" data-go-view="transactions">View all ↗</button></div><div id="recentTransactions" class="recent-list"><div class="empty-mini">No transactions yet. Add your first one.</div></div></article>
+          <article class="panel"><div class="panel-head"><div><span class="eyebrow">YOUR PLAN</span><h3>Budget progress</h3></div><button class="text-button" data-go-view="budgets">Manage ↗</button></div><div id="budgetPreview" class="plan-preview"><div class="empty-mini">Create a budget to stay on track.</div></div><div class="panel-divider"></div><div class="panel-head goal-head"><div><span class="eyebrow">KEEP MOVING</span><h3>Saving goals</h3></div><button class="text-button" data-go-view="goals">View ↗</button></div><div id="goalPreview" class="goal-preview"><div class="empty-mini">Set your first savings goal.</div></div></article>
+        </div>
+      </section>
+
+      <section id="view-transactions" class="view">
+        <div class="section-intro"><div><div class="eyebrow">YOUR MONEY HISTORY</div><h2>Transactions</h2><p>Semua aktivitas pemasukan dan pengeluaran.</p></div><button class="btn btn-primary" id="addTransactionBtn2">＋ Add transaction</button></div>
+        <div class="toolbar panel"><div class="search-box"><span>⌕</span><input id="transactionSearch" type="search" placeholder="Search category or note..."></div><select id="transactionTypeFilter" class="filter-select"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expense</option></select><input id="transactionMonthFilter" class="filter-select" type="month" aria-label="Filter bulan"><button class="btn btn-ghost" id="clearFilters">Reset</button><button class="btn btn-ghost" id="exportCsvBtn">↓ CSV</button></div>
+        <article class="panel table-panel"><div class="table-top"><div><h3>All activity</h3><small id="transactionCount">0 records</small></div><span class="secure-note">● PRIVATE DATA</span></div><div class="table-wrap"><table><thead><tr><th>TRANSACTION</th><th>DATE</th><th>CATEGORY</th><th>TYPE</th><th class="align-right">AMOUNT</th><th></th></tr></thead><tbody id="transactionsTable"><tr><td colspan="6" class="table-empty">No transactions found.</td></tr></tbody></table></div></article>
+      </section>
+
+      <section id="view-budgets" class="view">
+        <div class="section-intro"><div><div class="eyebrow">SPEND WITH INTENTION</div><h2>Budgets</h2><p>Tentukan batas pengeluaran per kategori setiap bulan.</p></div><button class="btn btn-primary" id="addBudgetBtn">＋ New budget</button></div>
+        <div class="budget-summary-grid"><div class="metric-card"><span class="subtle-label">TOTAL BUDGET</span><strong id="budgetTotal">Rp0</strong></div><div class="metric-card"><span class="subtle-label">ALREADY SPENT</span><strong id="budgetSpent">Rp0</strong></div><div class="metric-card"><span class="subtle-label">REMAINING</span><strong id="budgetRemaining">Rp0</strong></div></div>
+        <div id="budgetsList" class="cards-grid budgets-grid"><div class="panel empty-state">Belum ada budget. Buat batas pengeluaran pertamamu.</div></div>
+      </section>
+
+      <section id="view-goals" class="view">
+        <div class="section-intro"><div><div class="eyebrow">SMALL STEPS, BIG PLANS</div><h2>Saving goals</h2><p>Ubah rencana menjadi target tabungan yang terukur.</p></div><button class="btn btn-primary" id="addGoalBtn">＋ New goal</button></div>
+        <div id="goalsList" class="goal-grid"><div class="panel empty-state">Belum ada target tabungan. Mulai dari satu tujuan kecil.</div></div>
+      </section>
+
+      <section id="view-reports" class="view">
+        <div class="section-intro"><div><div class="eyebrow">SEE THE BIGGER PICTURE</div><h2>Reports</h2><p>Pahami pola uangmu berdasarkan catatan yang tersimpan.</p></div><button class="btn btn-ghost" id="printReportBtn">↗ Print report</button></div>
+        <div class="content-grid report-grid"><article class="panel chart-panel"><div class="panel-head"><div><span class="eyebrow">MONTHLY COMPARISON</span><h3>Income vs expense</h3></div></div><div id="reportChart" class="cashflow-chart"></div></article><article class="panel"><div class="panel-head"><div><span class="eyebrow">CATEGORY ANALYSIS</span><h3>Where money goes</h3></div></div><div id="reportCategories" class="category-list"></div></article></div>
+        <article class="panel report-insight"><span class="eyebrow">MONTHLY INSIGHT</span><h3 id="reportInsightTitle">Your financial story starts here.</h3><p id="reportInsight">Tambahkan transaksi agar Grey Finance bisa merangkum pola arus uangmu.</p></article>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="section-intro"><div><div class="eyebrow">MAKE IT YOURS</div><h2>Settings</h2><p>Atur tampilan dan preferensi Grey Finance.</p></div></div>
+        <article class="panel settings-panel"><div class="settings-row"><div><b>Appearance</b><small>Pilih tema yang nyaman untukmu.</small></div><select id="themeSelect" class="filter-select"><option value="dark">Dark mode</option><option value="light">Light mode</option></select></div><div class="settings-row"><div><b>Currency display</b><small>Mengubah format tampilan nominal. Nilai transaksi tidak dikonversi.</small></div><select id="currencySelect" class="filter-select"><option value="IDR">Indonesian Rupiah (IDR)</option><option value="USD">US Dollar (USD)</option><option value="SGD">Singapore Dollar (SGD)</option></select></div><div class="settings-row"><div><b>Account</b><small id="settingsEmail">Your account</small></div><button class="btn btn-ghost" id="settingsLogout">Sign out</button></div><div class="settings-row"><div><b>Privacy</b><small>Session memakai cookie HttpOnly dan data transaksi dipisahkan per akun.</small></div><span class="secure-note">● SESSION PROTECTED</span></div></article>
+        <p class="settings-disclaimer">Grey Finance adalah alat pencatatan pribadi, bukan layanan bank. Selalu jaga keamanan akun dan jangan memasukkan informasi kartu atau PIN.</p>
+      </section>
+
+      <footer class="app-footer"><span>GREY FINANCE <span class="footer-dot">✦</span> PERSONAL MONEY SPACE</span><span>Built for clarity · <span id="footerYear"></span></span></footer>
+    </main>
+  </div>
+
+  <div id="transactionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="transactionModalTitle"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">RECORD YOUR MONEY</span><h2 id="transactionModalTitle">Add transaction</h2></div><button class="icon-button close-modal" data-close-modal aria-label="Tutup">×</button></div><form id="transactionForm" class="modal-form"><input id="transactionId" type="hidden"><div class="type-switch"><label><input type="radio" name="transactionType" value="expense" checked><span>↘ Expense</span></label><label><input type="radio" name="transactionType" value="income"><span>↗ Income</span></label></div><label>Amount<div class="amount-input"><span id="currencyPrefix">Rp</span><input id="transactionAmount" type="number" min="1" step="1" placeholder="0" required></div></label><div class="form-two"><label>Category<select id="transactionCategory" required><option value="">Choose category</option><option>Food & Drinks</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Health</option><option>Entertainment</option><option>Salary</option><option>Freelance</option><option>Business</option><option>Education</option><option>Other</option></select></label><label>Date<input id="transactionDate" type="date" required></label></div><label>Note <span class="optional">(optional)</span><input id="transactionNote" type="text" maxlength="160" placeholder="What was this for?"></label><div class="modal-actions"><button type="button" class="btn btn-ghost" data-close-modal>Cancel</button><button type="submit" class="btn btn-primary" id="saveTransactionBtn">Save transaction</button></div></form></div></div>
+
+  <div id="planModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="planModalTitle"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow" id="planEyebrow">PLAN AHEAD</span><h2 id="planModalTitle">New budget</h2></div><button class="icon-button close-modal" data-close-modal aria-label="Tutup">×</button></div><form id="planForm" class="modal-form"><input id="planType" type="hidden"><label id="planNameLabel">Category<input id="planName" type="text" maxlength="60" placeholder="e.g. Food & Drinks" required></label><label id="planAmountLabel">Monthly limit<div class="amount-input"><span id="planCurrencyPrefix">Rp</span><input id="planAmount" type="number" min="1" step="1" required></div></label><label id="planDateLabel" class="hidden">Target date<input id="planDate" type="date"></label><div class="modal-actions"><button type="button" class="btn btn-ghost" data-close-modal>Cancel</button><button type="submit" class="btn btn-primary">Save plan</button></div></form></div></div>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
 </body>
 </html>
