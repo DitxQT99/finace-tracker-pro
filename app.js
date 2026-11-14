@@ -48,6 +48,18 @@
     if (info) el.classList.add("info");
   }
   function hideAuthNotice() { $("#authNotice").classList.add("hidden"); }
+  function showDatabaseNotice() {
+    const el=$("#authNotice");
+    el.replaceChildren(document.createTextNode("Database belum tersambung. "));
+    const link=document.createElement("a");
+    link.href="https://vercel.com/marketplace/neon";
+    link.target="_blank";
+    link.rel="noopener noreferrer";
+    link.textContent="Connect Neon PostgreSQL";
+    el.appendChild(link);
+    el.classList.remove("hidden");
+    el.classList.add("info");
+  }
   async function api(path, options={}) {
     const response = await fetch(path, {
       method: options.method || "GET",
