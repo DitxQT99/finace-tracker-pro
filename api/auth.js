@@ -1,7 +1,7 @@
 const { randomUUID } = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { getDB, ensureSchema, getSession, setSessionCookie, clearSessionCookie, handleError } = require("./_lib/core");
+const { getDB, ensureSchema, getSession, setSessionCookie, clearSessionCookie, handleError } = require("../lib/core");
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method === "OPTIONS") return res.status(204).end();
