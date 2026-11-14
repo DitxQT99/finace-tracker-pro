@@ -11,31 +11,31 @@ function getDB() {
   return sqlClient;
 }
 async function ensureSchema(sql) {
-  await sql\`CREATE TABLE IF NOT EXISTS users (
+  await sql`CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY, name VARCHAR(60) NOT NULL, email VARCHAR(254) NOT NULL UNIQUE,
     password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )\`;
-  await sql\`CREATE TABLE IF NOT EXISTS transactions (
+  )`;
+  await sql`CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(10) NOT NULL CHECK (type IN ('income','expense')),
     amount NUMERIC(18,2) NOT NULL CHECK (amount > 0), category VARCHAR(60) NOT NULL,
     note VARCHAR(160), transaction_date DATE NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )\`;
-  await sql\`CREATE TABLE IF NOT EXISTS budgets (
+  )`;
+  await sql`CREATE TABLE IF NOT EXISTS budgets (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category VARCHAR(60) NOT NULL, limit_amount NUMERIC(18,2) NOT NULL CHECK (limit_amount > 0),
     month VARCHAR(7) NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, category, month)
-  )\`;
-  await sql\`CREATE TABLE IF NOT EXISTS goals (
+  )`;
+  await sql`CREATE TABLE IF NOT EXISTS goals (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(60) NOT NULL, target_amount NUMERIC(18,2) NOT NULL CHECK (target_amount > 0),
     saved_amount NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (saved_amount >= 0),
     deadline DATE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )\`;
-  await sql\`CREATE INDEX IF NOT EXISTS transactions_user_date_idx ON transactions(user_id, transaction_date DESC)\`;
-  await sql\`CREATE INDEX IF NOT EXISTS budgets_user_month_idx ON budgets(user_id, month)\`;
-  await sql\`CREATE INDEX IF NOT EXISTS goals_user_created_idx ON goals(user_id, created_at DESC)\`;
+  )`;
+  await sql`CREATE INDEX IF NOT EXISTS transactions_user_date_idx ON transactions(user_id, transaction_date DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS budgets_user_month_idx ON budgets(user_id, month)`;
+  await sql`CREATE INDEX IF NOT EXISTS goals_user_created_idx ON goals(user_id, created_at DESC)`;
 }
 function getSession(req) {
   const secret = process.env.JWT_SECRET;
