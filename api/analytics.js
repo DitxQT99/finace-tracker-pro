@@ -1,2 +1,50 @@
-const{requireUser,getUserById,handleError}=require("../lib/core");
-module.exports=async function(req,res){res.setHeader("Cache-Control","no-store");if(req.method!=="GET")return res.status(405).json({error:"Method not allowed."});try{const s=requireUser(req,res);if(!s)return;const u=await getUserById(s.id);if(!u)return res.status(401).json({error:"Akun tidak ditemukan."});const a=u.transactions||[],sum=(xs,t)=>xs.filter(x=>x.type===t).reduce((n,x)=>n+Number(x.amount||0),0),income=sum(a,"income"),expense=sum(a,"expense"),p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit"}).formatToParts(new Date()),month=p.find(x=>x.type==="year").value+"-"+p.find(x=>x.type==="month").value,cur=a.filter(x=>String(x.date).startsWith(month)),monthly=Array.from({length:6},(_,i)=>{const d=new Date(new Date().getFullYear(),new Date().getMonth()-5+i,1),k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"),v=a.filter(x=>String(x.date).startsWith(k));return{month:k,income:sum(v,"income"),expense:sum(v,"expense")};}),map={};cur.filter(x=>x.type==="expense").forEach(x=>map[x.category]=(map[x.category]||0)+Number(x.amount||0));const categories=Object.entries(map).sort((x,y)=>y[1]-x[1]).slice(0,8).map(([category,total])=>({category,total}));return res.status(200).json({income,expense,balance:income-expense,currentMonth:{income:sum(cur,"income"),expense:sum(cur,"expense")},monthly,categories});}catch(e){return handleError(res,e);}};
+const {requireUser,getUserById,handleError}=require("../lib/core");
+function monthKey(date) {
+  const parts = new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit"}).formatToParts(date);
+  return parts.find(x=>x.type==="year").value+"-"+parts.find(x=>x.type==="month").value;
+}
+module.exports=async function(req,res){
+  res.setHeader("Cache-Control","no-store");
+  if(req.method!=="GET")return res.status(405).json({error:"Method not allowed."});
+  try {
+    const session=requireUser(req,res);if(!session)return;
+    const user=await getUserById(session.id);if(!user)return res.status(401).json({error:"Akun tidak ditemukan."});
+    const transactions=user.transactions||[];
+    const sum=(rows,type)=>rows.filter(row=>row.type===type).reduce((total,row)=>total+Number(row.amount||0),0);
+    const now=new Date(),currentMonth=monthKey(now);
+    const previousDate=new Date(now.getTime());previousDate.setUTCDate(1);previousDate.setUTCMonth(previousDate.getUTCMonth()-1);
+    const previousMonth=monthKey(previousDate);
+    const currentRows=transactions.filter(row=>String(row.date).startsWith(currentMonth));
+    const previousRows=transactions.filter(row=>String(row.date).startsWith(previousMonth));
+    const income=sum(transactions,"income"),expense=sum(transactions,"expense");
+    const currentIncome=sum(currentRows,"income"),currentExpense=sum(currentRows,"expense");
+    const previousExpense=sum(previousRows,"expense");
+    const daysElapsed=Number(new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Jakarta",day:"numeric"}).format(now));
+    const categoryTotals={};
+    currentRows.filter(row=>row.type==="expense").forEach(row=>{
+      categoryTotals[row.category]=(categoryTotals[row.category]||0)+Number(row.amount||0);
+    });
+    const categories=Object.entries(categoryTotals).sort((a,b)=>b[1]-a[1])
+      .slice(0,8).map(([category,total])=>({category,total}));
+    const monthly=Array.from({length:12},(_,index)=>{
+      const date=new Date(now.getFullYear(),now.getMonth()-11+index,1);
+      const key=date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
+      const rows=transactions.filter(row=>String(row.date).startsWith(key));
+      return {month:key,income:sum(rows,"income"),expense:sum(rows,"expense")};
+    });
+    const expenseChange=previousExpense>0?((currentExpense-previousExpense)/previousExpense)*100:(currentExpense>0?100:0);
+    return res.status(200).json({
+      income,expense,balance:income-expense,
+      currentMonth:{income:currentIncome,expense:currentExpense},
+      previousMonth:{month:previousMonth,income:sum(previousRows,"income"),expense:previousExpense},
+      monthly,categories,
+      insights:{
+        savingRate:currentIncome>0?Math.round(Math.max(0,(currentIncome-currentExpense)/currentIncome*100)):0,
+        dailyAverageExpense:Math.round(currentExpense/Math.max(1,daysElapsed)),
+        expenseChange:Math.round(expenseChange),
+        topCategory:categories[0]||null,
+        transactionCount:currentRows.length
+      }
+    });
+  } catch(error){return handleError(res,error);}
+};
