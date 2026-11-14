@@ -306,7 +306,7 @@
     if (radio) radio.checked=true;
     $("#transactionAmount").value=row ? row.amount : "";
     $("#transactionCategory").value=row ? row.category : "";
-    $("#transactionDate").value=row ? row.date : new Date().toISOString().slice(0,10);
+    $("#transactionDate").value=row ? row.date : new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
     $("#transactionNote").value=row ? row.note || "" : "";
     $("#transactionModal").classList.remove("hidden");
     $("#transactionAmount").focus();
