@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
     if (req.method === "GET") {
       const session = getSession(req);
       if (!session || !session.userId) return res.status(200).json({ user: null });
-      const rows = await sql\`SELECT id, name, email FROM users WHERE id = \${session.userId} LIMIT 1\`;
+      const rows = await sql`SELECT id, name, email FROM users WHERE id = ${session.userId} LIMIT 1`;
       return res.status(200).json({ user: rows[0] || null });
     }
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
       const hash = await bcrypt.hash(password, 12);
       const id = randomUUID();
       try {
-        const rows = await sql\`INSERT INTO users (id, name, email, password_hash) VALUES (\${id}, \${name}, \${email}, \${hash}) RETURNING id, name, email\`;
+        const rows = await sql`INSERT INTO users (id, name, email, password_hash) VALUES (${id}, ${name}, ${email}, ${hash}) RETURNING id, name, email`;
         const token = jwt.sign({ userId: rows[0].id }, process.env.JWT_SECRET, { expiresIn: "7d", issuer: "grey-finance" });
         setSessionCookie(res, token);
         return res.status(201).json({ user: rows[0] });
@@ -39,7 +39,7 @@ module.exports = async function handler(req, res) {
       }
     }
     if (action === "login") {
-      const rows = await sql\`SELECT id, name, email, password_hash FROM users WHERE email = \${email} LIMIT 1\`;
+      const rows = await sql`SELECT id, name, email, password_hash FROM users WHERE email = ${email} LIMIT 1`;
       const user = rows[0];
       if (!user || !(await bcrypt.compare(password, user.password_hash))) return res.status(401).json({ error: "Email atau password tidak sesuai." });
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "7d", issuer: "grey-finance" });
