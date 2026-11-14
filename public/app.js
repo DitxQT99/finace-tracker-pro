@@ -50,13 +50,7 @@
   function hideAuthNotice() { $("#authNotice").classList.add("hidden"); }
   function showDatabaseNotice() {
     const el=$("#authNotice");
-    el.replaceChildren(document.createTextNode("Backend belum dikonfigurasi. "));
-    const link=document.createElement("a");
-    link.href="https://github.com/DitxQT99/finace-tracker-pro/blob/main/GITHUB_BACKEND_SETUP.md";
-    link.target="_blank";
-    link.rel="noopener noreferrer";
-    link.textContent="Lihat panduan setup backend";
-    el.appendChild(link);
+    el.textContent="Penyimpanan sementara tidak tersedia. Coba lagi beberapa saat.";
     el.classList.remove("hidden");
     el.classList.add("info");
   }
