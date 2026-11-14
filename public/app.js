@@ -355,7 +355,7 @@
     try {
       const result=await api("/api/auth",{method:"POST",body});
       if(result.user) { showApp(result.user); notify(action==="register"?"Akun berhasil dibuat. Selamat datang!":"Berhasil masuk."); }
-    } catch(error) { showAuthNotice(error.message,error.message.toLowerCase().includes("database")); }
+    } catch(error) { if(error.message.toLowerCase().includes("database")) showDatabaseNotice(); else showAuthNotice(error.message); }
     finally { button.disabled=false; button.textContent=previous; }
   }
   $("#loginForm").addEventListener("submit",event=>{event.preventDefault();handleAuthSubmit(event.currentTarget,"login");});
@@ -450,5 +450,5 @@
   setTheme(state.theme);
   setCurrency(state.currency);
   setAuthMode("login");
-  api("/api/auth").then(result=>{if(result.user)showApp(result.user);}).catch(error=>{if(error.message.toLowerCase().includes("database"))showAuthNotice(error.message,true);});
+  api("/api/auth").then(result=>{if(result.user)showApp(result.user);}).catch(error=>{if(error.message.toLowerCase().includes("database"))showDatabaseNotice();});
 })();
