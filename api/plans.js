@@ -5,7 +5,8 @@ module.exports = async function handler(req,res) {
   try {
     const sql=getDB(); await ensureSchema(sql);
     const user=requireUser(req,res); if(!user)return;
-    const currentMonth=new Date().toISOString().slice(0,7);
+    const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit"}).formatToParts(new Date());
+    const currentMonth=parts.find(p=>p.type==="year").value+"-"+parts.find(p=>p.type==="month").value;
     if(req.method==="GET") {
       const budgets=await sql\`SELECT b.id,b.category,b.limit_amount::float8 AS limit_amount,
         COALESCE(SUM(CASE WHEN t.type='expense' THEN t.amount ELSE 0 END),0)::float8 AS spent
