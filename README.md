@@ -1,34 +1,28 @@
 # Grey Finance
 
-Grey Finance is a personal finance dashboard for recording income and expenses, tracking category budgets, planning savings goals, and reviewing cash flow.
+Grey Finance is a mobile-first personal finance dashboard for recording income and expenses, tracking budgets, planning savings goals, and reviewing cash flow.
 
 ## Stack
 
-- Static, mobile-first HTML/CSS/JavaScript interface
+- Static HTML/CSS/JavaScript interface
 - Vercel serverless API functions
-- Neon PostgreSQL via the Vercel Marketplace
-- bcryptjs password hashing and JWT sessions stored in HttpOnly cookies
+- Separate private GitHub repository as a small-project JSON data store
+- bcryptjs password hashing and JWT sessions in HttpOnly cookies
 
-## Deploy
+## Backend setup (free tier)
 
-1. Use the Vercel project named grey-finance connected to this repository.
-2. In Vercel Marketplace, add the Neon PostgreSQL integration and connect it to the grey-finance project. The integration supplies DATABASE_URL.
-3. JWT_SECRET is already stored as a sensitive Vercel environment variable.
-4. Redeploy after the database integration is connected. The API creates the application tables idempotently on its first request.
+Follow [GITHUB_BACKEND_SETUP.md](./GITHUB_BACKEND_SETUP.md). Create a separate **private** repository for data and a fine-grained GitHub token with only Contents read/write permission. Add `GITHUB_DATA_REPO` and `GITHUB_TOKEN` as encrypted Vercel environment variables. Keep the existing `JWT_SECRET` configured.
+
+Do not use this public source repository as the data store. Never expose `GITHUB_TOKEN` in frontend code.
 
 ## Local development
 
-- Copy .env.example to .env.local.
-- Add a Neon connection string as DATABASE_URL.
-- Set a random JWT_SECRET with at least 32 characters.
-- Install dependencies with npm install.
-- Run locally with vercel dev.
+Copy `.env.example` to `.env.local`, fill in the private repository and token, set a strong `JWT_SECRET`, install dependencies, and run with `vercel dev`.
 
-## Security notes
+## Security and limitations
 
-- There is no seeded default account or hard-coded password.
 - Passwords are hashed with bcryptjs.
-- Session tokens are stored in HttpOnly, SameSite=Lax cookies; no JWT is stored in browser localStorage.
-- Every transaction, budget, and saving goal query is scoped to the authenticated user.
-- Amounts are stored in a single currency chosen by the account owner. Changing the display currency only changes formatting; it does not convert stored values.
+- Sessions use HttpOnly, SameSite=Lax cookies.
+- User records are stored separately under hashed email index and user ID JSON paths.
+- GitHub commit history retains previous data versions. This is a free option for a small personal project, not a bank-grade or high-volume database.
 - Grey Finance is a record-keeping tool, not a bank or financial institution.
