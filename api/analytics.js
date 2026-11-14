@@ -1,4 +1,4 @@
-const { getDB, ensureSchema, requireUser, handleError } = require("./_lib/core");
+const { getDB, ensureSchema, requireUser, handleError } = require("../lib/core");
 module.exports = async function handler(req,res) {
   res.setHeader("Cache-Control","no-store");
   if (req.method!=="GET") return res.status(405).json({ error:"Method not allowed." });
