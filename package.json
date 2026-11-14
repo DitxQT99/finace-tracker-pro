@@ -1,8 +1,8 @@
 {
   "name": "grey-finance",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
-  "description": "Grey Finance — personal finance dashboard with private GitHub-backed storage",
+  "description": "Grey Finance — private Vercel Blob-backed personal finance app",
   "engines": {
     "node": "24.x"
   },
@@ -12,6 +12,7 @@
     "check": "node --check app.js && node --check lib/core.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js && node --check api/health.js"
   },
   "dependencies": {
+    "@vercel/blob": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2"
   }
