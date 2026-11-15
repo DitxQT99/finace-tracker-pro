@@ -109,7 +109,8 @@ async function askModel(req,user,message){
 async function askGeminiImage(user,message,image){
   const key=process.env.GEMINI_API_KEY;
   if(!key){const e=new Error("Fitur foto belum aktif. Tambahkan GEMINI_API_KEY di Environment Variables Vercel.");e.code="GEMINI_NOT_CONFIGURED";throw e;}
-  const match=/^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(image||""));
+  const dataUrl=String(image||""),comma=dataUrl.indexOf(","),header=comma>0?dataUrl.slice(0,comma):"",mimeType=header.startsWith("data:")?header.slice(5).replace(";base64",""):"",base64=comma>0?dataUrl.slice(comma+1):"";
+  if(!["image/jpeg","image/png","image/webp"].includes(mimeType)||!base64||!/^[A-Za-z0-9+/=]+$/.test(base64)){const e=new Error("Foto harus JPG, PNG, atau WebP yang valid.");e.code="BAD_IMAGE";throw e;}
   if(!match){const e=new Error("Foto harus JPG, PNG, atau WebP yang valid.");e.code="BAD_IMAGE";throw e;}
   const mimeType=match[1],base64=match[2];
   if(base64.length>7000000){const e=new Error("Ukuran foto maksimal 5 MB.");e.code="BAD_IMAGE";throw e;}
