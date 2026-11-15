@@ -1,7 +1,7 @@
 "use strict";
 const {randomUUID}=require("crypto");
 const {requireUser,mutateUser,getUserById,handleError,validDate}=require("../lib/core");
-const MODEL=process.env.GREY_AI_MODEL||"openai/gpt-4.1-mini";
+const MODEL=process.env.GREY_AI_MODEL||"nvidia/nemotron-3.5-lightning-free";
 const CATEGORIES=["Food & Drinks","Transport","Shopping","Bills","Health","Entertainment","Salary","Freelance","Business","Education","Other"];
 const rateLimits=new Map();
 
@@ -105,6 +105,57 @@ async function askModel(req,user,message){
   }
   return {reply,draft};
 }
+
+async function askGeminiImage(user,message,image){
+  const key=process.env.GEMINI_API_KEY;
+  if(!key){const e=new Error("Fitur foto belum aktif. Tambahkan GEMINI_API_KEY di Environment Variables Vercel.");e.code="GEMINI_NOT_CONFIGURED";throw e;}
+  const match=/^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(image||""));
+  if(!match){const e=new Error("Foto harus JPG, PNG, atau WebP yang valid.");e.code="BAD_IMAGE";throw e;}
+  const mimeType=match[1],base64=match[2];
+  if(base64.length>7000000){const e=new Error("Ukuran foto maksimal 5 MB.");e.code="BAD_IMAGE";throw e;}
+  const today=jakartaDate();
+  const prompt=[
+    "Kamu adalah Grey AI, asisten keuangan pribadi berbahasa Indonesia.",
+    "Analisis foto struk/bukti transaksi hanya untuk membaca transaksi yang benar-benar terlihat. Jangan menebak angka yang tidak terbaca.",
+    "Jika foto bukan struk atau informasi transaksi tidak jelas, draft harus null dan jelaskan alasannya.",
+    "Gunakan total pembayaran akhir, bukan subtotal. Buat draft pengeluaran hanya jika nominal dan tanggal terbaca.",
+    "Nominal Rupiah berupa bilangan bulat. Tanggal format YYYY-MM-DD. Hari ini Asia/Jakarta: "+today+".",
+    "Pilih kategori dari: "+CATEGORIES.join(", ")+".",
+    "Jangan menyimpan transaksi otomatis. Draft menunggu persetujuan pengguna.",
+    "Kembalikan JSON dengan bentuk {reply:string,draft:null atau object dengan type,amount,category,note,date}."
+  ].join("\\n");
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+  let response,data;
+  try{
+    response=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="+encodeURIComponent(key),{
+      method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:prompt}]},
+        contents:[{role:"user",parts:[{text:(message||"Baca foto ini dan siapkan draft transaksi jika jelas.")+"\\n\\nDATA KEUANGAN AKUN:\\n"+JSON.stringify(financeContext(user))},{inlineData:{mimeType,data:base64}}]}],
+        generationConfig:{temperature:0.2,maxOutputTokens:700,responseMimeType:"application/json"}
+      })
+    });
+    data=await response.json().catch(()=>({}));
+  }finally{clearTimeout(timer);}
+  if(!response||!response.ok){
+    const status=response&&response.status;
+    const e=new Error(status===429?"Kuota gratis Gemini sedang habis atau mencapai batas. Coba lagi nanti.":status===403?"Akses Gemini ditolak. Periksa API key dan kuota gratis.":"Gemini tidak dapat memproses foto sekarang.");
+    e.code="GEMINI_PROVIDER_ERROR";e.statusCode=status;throw e;
+  }
+  const content=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("").trim();
+  if(!content)throw new Error("Gemini tidak mengembalikan hasil pembacaan foto.");
+  let parsed;try{parsed=JSON.parse(content);}catch{throw new Error("Hasil pembacaan foto tidak valid. Coba foto ulang.");}
+  const reply=String(parsed.reply||"").trim().slice(0,1800)||"Aku belum bisa membaca struk ini dengan jelas.";
+  let draft=null;
+  if(parsed.draft&&typeof parsed.draft==="object"){
+    const d=parsed.draft,amount=Number(d.amount);
+    if(["income","expense"].includes(d.type)&&Number.isSafeInteger(amount)&&amount>0&&amount<=999999999999999&&CATEGORIES.includes(d.category)&&validDate(d.date)&&String(d.note||"").trim()){
+      draft={id:randomUUID(),type:d.type,amount,category:d.category,note:String(d.note).trim().slice(0,160),date:d.date,status:"pending",createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+86400000).toISOString()};
+    }
+  }
+  return {reply,draft};
+}
+
 function draftView(d){
   return {id:d.id,type:d.type,amount:d.amount,category:d.category,note:d.note,date:d.date,status:d.status,createdAt:d.createdAt,expiresAt:d.expiresAt,transactionId:d.transactionId||null};
 }
@@ -145,12 +196,13 @@ module.exports=async function(req,res){
     }
     if(action!=="chat")return res.status(400).json({error:"Aksi tidak dikenal."});
     const message=String(body.message||"").trim();
-    if(!message||message.length>1200)return res.status(400).json({error:"Pesan harus 1–1.200 karakter."});
+    const image=typeof body.image==="string"?body.image:"";
+    if((!message&&!image)||message.length>1200)return res.status(400).json({error:"Tulis pesan atau lampirkan foto. Pesan maksimal 1.200 karakter."});
     if(!checkRateLimit(session.id))return res.status(429).json({error:"Batas chat sementara tercapai. Coba lagi sebentar."});
     const user=await getUserById(session.id);
     if(!user)return res.status(404).json({error:"Akun tidak ditemukan."});
-    const answer=await askModel(req,user,message),now=new Date().toISOString();
-    const userMessage={id:randomUUID(),role:"user",content:message,createdAt:now};
+    const answer=image?await askGeminiImage(user,message,image):await askModel(req,user,message),now=new Date().toISOString();
+    const userMessage={id:randomUUID(),role:"user",content:message||(image?"📷 Foto struk":""),createdAt:now};
     const assistantMessage={id:randomUUID(),role:"assistant",content:answer.reply,createdAt:new Date().toISOString(),draftId:answer.draft?.id||null};
     const updated=await mutateUser(session.id,d=>{
       d.aiMessages=Array.isArray(d.aiMessages)?d.aiMessages:[];
@@ -163,6 +215,9 @@ module.exports=async function(req,res){
     return res.status(200).json({userMessage,assistantMessage,draft:answer.draft?draftView(answer.draft):null});
   }catch(e){
     if(e&&e.code==="AI_NOT_CONFIGURED")return res.status(503).json({error:"AI Gateway belum siap di deployment Grey Finance."});
+    if(e&&e.code==="GEMINI_NOT_CONFIGURED")return res.status(503).json({error:e.message});
+    if(e&&e.code==="BAD_IMAGE")return res.status(400).json({error:e.message});
+    if(e&&e.code==="GEMINI_PROVIDER_ERROR")return res.status(e.statusCode===429?429:503).json({error:e.message});
     if(e&&e.code==="AI_PROVIDER_ERROR")return res.status(e.statusCode===429?429:503).json({error:e.message});
     if(e&&e.name==="AbortError")return res.status(504).json({error:"AI terlalu lama merespons. Coba kirim ulang."});
     return handleError(res,e);
