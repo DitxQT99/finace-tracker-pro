@@ -138,7 +138,7 @@
   function chooseImage(file){
     if(!file)return;
     if(!["image/jpeg","image/png","image/webp"].includes(file.type)){notify("Pilih foto JPG, PNG, atau WebP.",true);return;}
-    if(file.size>5*1024*1024){notify("Ukuran foto maksimal 5 MB.",true);return;}
+    if(file.size>3*1024*1024){notify("Ukuran foto maksimal 3 MB.",true);return;}
     const reader=new FileReader();
     reader.onload=()=>{state.imageFile=file;state.imageData=String(reader.result||"");$("#aiImagePreviewImg").src=state.imageData;$("#aiImagePreview").classList.remove("hidden");};
     reader.onerror=()=>notify("Foto tidak bisa dibaca. Coba pilih ulang.",true);
