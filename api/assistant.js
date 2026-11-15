@@ -126,7 +126,7 @@ async function askGeminiImage(user,message,image){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
   let response,data;
   try{
-    response=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent,{
+    response=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",{
       method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},signal:controller.signal,
       body:JSON.stringify({
         systemInstruction:{parts:[{text:prompt}]},
