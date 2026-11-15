@@ -25,6 +25,71 @@
     $("#pageTitle").textContent="Grey AI";$("#sidebar").classList.remove("open");loadHistory();$("#aiChatInput").focus();
   }
   nav.addEventListener("click",showView);
+  // Replace browser-native select popups with accessible in-app pickers.
+  function decorateSelect(select){
+    if(select.closest(".select-menu")||select.dataset.customized==="true")return;
+    select.dataset.customized="true";
+    const wrapper=document.createElement("div");
+    wrapper.className="select-menu select-component-picker";
+    if(select.classList.contains("select-quiet"))wrapper.classList.add("select-picker-quiet");
+    select.parentNode.insertBefore(wrapper,select);
+    wrapper.append(select);
+    select.classList.add("select-native");
+    select.setAttribute("aria-hidden","true");
+    select.tabIndex=-1;
+    if(select.id==="transactionCategory")select.required=false;
+    const trigger=document.createElement("button");
+    trigger.type="button";
+    trigger.className="select-trigger";
+    trigger.setAttribute("aria-haspopup","listbox");
+    trigger.setAttribute("aria-expanded","false");
+    trigger.setAttribute("aria-label",select.getAttribute("aria-label")||select.id||"Choose option");
+    trigger.innerHTML='<span></span><i>⌄</i>';
+    if(select.classList.contains("select-quiet"))trigger.classList.add("select-trigger-quiet");
+    const options=document.createElement("div");
+    options.className="select-options";
+    options.setAttribute("role","listbox");
+    Array.from(select.options).forEach(option=>{
+      const button=document.createElement("button");
+      button.type="button";
+      button.setAttribute("role","option");
+      button.dataset.value=option.value;
+      button.textContent=option.textContent;
+      button.disabled=option.disabled;
+      options.append(button);
+    });
+    wrapper.append(trigger,options);
+    const sync=()=>{
+      trigger.querySelector("span").textContent=select.selectedOptions[0]?.textContent||"Choose option";
+      options.querySelectorAll("[role=option]").forEach(button=>button.setAttribute("aria-selected",String(button.dataset.value===select.value)));
+    };
+    trigger.addEventListener("click",()=>{
+      document.querySelectorAll(".select-component-picker.open").forEach(menu=>{if(menu!==wrapper){menu.classList.remove("open");menu.querySelector(".select-trigger")?.setAttribute("aria-expanded","false");}});
+      const open=wrapper.classList.toggle("open");
+      trigger.setAttribute("aria-expanded",String(open));
+    });
+    options.addEventListener("click",event=>{
+      const button=event.target.closest("[data-value]");
+      if(!button||button.disabled)return;
+      select.value=button.dataset.value;
+      select.dispatchEvent(new Event("change",{bubbles:true}));
+      sync();
+      wrapper.classList.remove("open");
+      trigger.setAttribute("aria-expanded","false");
+    });
+    select.addEventListener("change",sync);
+    sync();
+  }
+  document.querySelectorAll("select").forEach(decorateSelect);
+  window.greyFinanceSyncSelects=()=>document.querySelectorAll(".select-component-picker select").forEach(select=>{
+    const trigger=select.parentElement?.querySelector(".select-trigger");
+    if(trigger){trigger.querySelector("span").textContent=select.selectedOptions[0]?.textContent||"Choose option";select.parentElement.querySelectorAll("[role=option]").forEach(button=>button.setAttribute("aria-selected",String(button.dataset.value===select.value)));}
+  });
+  document.addEventListener("click",event=>{
+    if(event.target.closest(".select-component-picker"))return;
+    document.querySelectorAll(".select-component-picker.open").forEach(menu=>{menu.classList.remove("open");menu.querySelector(".select-trigger")?.setAttribute("aria-expanded","false");});
+  });
+
   function el(tag,className,text){
     const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;
   }
