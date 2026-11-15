@@ -270,7 +270,7 @@
   }
   function renderReport() {
     const data=state.analytics||{};
-    renderChart($("#reportChart"),data.monthly||[],6);
+    renderChart($("#reportChart"),data.monthly||[],12);
     renderCategories($("#reportCategories"),data.categories||[]);
     const current=data.currentMonth||{};
     const income=Number(current.income||0), expense=Number(current.expense||0);
