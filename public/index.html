@@ -101,7 +101,7 @@
 
       <section id="view-transactions" class="view">
         <div class="section-intro"><div><div class="eyebrow">YOUR MONEY HISTORY</div><h2>Transactions</h2><p>Semua aktivitas pemasukan dan pengeluaran.</p></div><button class="btn btn-primary" id="addTransactionBtn2">＋ Add transaction</button></div>
-        <div class="toolbar panel"><div class="search-box"><span>⌕</span><input id="transactionSearch" type="search" placeholder="Search category or note..."></div><select id="transactionTypeFilter" class="filter-select"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expense</option></select><input id="transactionMonthFilter" class="filter-select" type="month" aria-label="Filter bulan"><button class="btn btn-ghost" id="clearFilters">Reset</button><button class="btn btn-ghost" id="exportCsvBtn">↓ CSV</button></div>
+        <div class="toolbar panel"><div class="search-box"><span>⌕</span><input id="transactionSearch" type="search" placeholder="Search category or note..."></div><div class="select-menu" id="transactionTypePicker"><select id="transactionTypeFilter" class="filter-select select-native" aria-hidden="true" tabindex="-1"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expense</option></select><button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false"><span>All types</span><i>⌄</i></button><div class="select-options" role="listbox"><button type="button" role="option" data-value="all" aria-selected="true">All types</button><button type="button" role="option" data-value="income" aria-selected="false">Income</button><button type="button" role="option" data-value="expense" aria-selected="false">Expense</button></div></div><input id="transactionMonthFilter" class="filter-select" type="month" aria-label="Filter bulan"><button class="btn btn-ghost" id="clearFilters">Reset</button><button class="btn btn-ghost" id="exportCsvBtn">↓ CSV</button></div>
         <article class="panel table-panel"><div class="table-top"><div><h3>All activity</h3><small id="transactionCount">0 records</small></div><span class="secure-note">● PRIVATE DATA</span></div><div class="table-wrap"><table><thead><tr><th>TRANSACTION</th><th>DATE</th><th>CATEGORY</th><th>TYPE</th><th class="align-right">AMOUNT</th><th></th></tr></thead><tbody id="transactionsTable"><tr><td colspan="6" class="table-empty">No transactions found.</td></tr></tbody></table></div></article>
       </section>
 
@@ -113,7 +113,7 @@
 
       <section id="view-goals" class="view">
         <div class="section-intro"><div><div class="eyebrow">SMALL STEPS, BIG PLANS</div><h2>Saving goals</h2><p>Ubah rencana menjadi target tabungan yang terukur.</p></div><button class="btn btn-primary" id="addGoalBtn">＋ New goal</button></div>
-        <div id="goalsList" class="goal-grid"><div class="panel empty-state">Belum ada target tabungan. Mulai dari satu tujuan kecil.</div></div>
+        <div id="goalTotals" class="budget-summary-grid goal-summary"><article class="metric-card"><span class="subtle-label">TOTAL TERKUMPUL</span><strong id="goalTotalContributed">Rp0</strong></article><article class="metric-card"><span class="subtle-label">TOTAL KELUAR</span><strong id="goalTotalWithdrawn">Rp0</strong></article><article class="metric-card"><span class="subtle-label">SALDO TABUNGAN</span><strong id="goalTotalBalance">Rp0</strong></article></div><div id="goalsList" class="goal-grid"><div class="panel empty-state">Belum ada target tabungan. Mulai dari satu tujuan kecil.</div></div>
       </section>
 
       <section id="view-reports" class="view">
@@ -138,6 +138,5 @@
 
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
   <script src="/app.js" defer></script>
-  <script src="/features.js" defer></script>
 </body>
 </html>
