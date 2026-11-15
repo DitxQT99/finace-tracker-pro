@@ -97,6 +97,11 @@
   modal.addEventListener("click",event=>{if(event.target===modal)closeModal();});
   $("#recurringForm").addEventListener("submit",async event=>{
     event.preventDefault();
+    const submit = $("#recurringForm button[type=submit]");
+    if (submit.disabled) return;
+    submit.disabled = true;
+    const originalLabel = submit.textContent;
+    submit.textContent = "Saving…";
     const body={
       type:$('input[name="recurringType"]:checked').value,
       amount:Number($("#recurringAmount").value),
