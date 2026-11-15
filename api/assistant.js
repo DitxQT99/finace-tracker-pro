@@ -1,7 +1,7 @@
 "use strict";
 const {randomUUID}=require("crypto");
 const {requireUser,mutateUser,getUserById,handleError,validDate}=require("../lib/core");
-const MODEL=process.env.GROQ_MODEL||"llama-3.3-70b-versatile";
+const MODEL=process.env.GROQ_MODEL||"openai/gpt-oss-120b";
 const CATEGORIES=["Food & Drinks","Transport","Shopping","Bills","Health","Entertainment","Salary","Freelance","Business","Education","Other"];
 const rateLimits=new Map();
 
@@ -54,7 +54,7 @@ async function askModel(user,message){
     "Kembalikan hanya JSON valid dengan bentuk {reply:string,draft:null atau object lengkap dengan type ('income'|'expense'),amount (number),category,note,date}. Jangan tambahkan markdown."
   ].join("\n");
   const history=(user.aiMessages||[]).slice(-12).filter(x=>x&&["user","assistant"].includes(x.role)&&typeof x.content==="string").map(x=>({role:x.role,content:x.content.slice(0,1200)}));
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
   let response,data;
   try{
     response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
@@ -71,7 +71,22 @@ async function askModel(user,message){
   }finally{clearTimeout(timer);}
   if(!response||!response.ok){
     const status=response&&response.status;
-    const e=new Error(status===401?"API key Groq tidak valid.":status===403?"Akses Groq ditolak. Periksa pengaturan akun dan API key.":status===429?"Batas gratis Groq sedang tercapai. Coba lagi nanti.":"Groq tidak dapat dihubungi sekarang. Coba lagi sebentar.");
+    const providerMessage=String(data?.error?.message||data?.message||"").trim().slice(0,240);
+    const detail=providerMessage?(" Detail dari Groq: "+providerMessage):"";
+    const message=status===400
+      ?"Permintaan chat ditolak Groq. Periksa model dan format jawaban."+detail
+      :status===401
+        ?"API key Groq tidak valid. Periksa GROQ_API_KEY di Vercel."+detail
+        :status===403
+          ?"Akses Groq ditolak. Periksa izin dan status API key."+detail
+          :status===404
+            ?"Model atau endpoint Groq tidak ditemukan. Periksa GROQ_MODEL."+detail
+            :status===429
+              ?"Batas penggunaan Groq sedang tercapai. Coba lagi nanti."+detail
+              :status>=500
+                ?"Server Groq sedang bermasalah. Coba lagi sebentar."+detail
+                :"Groq gagal memproses chat"+(status?" (HTTP "+status+")":"")+"."+detail;
+    const e=new Error(message);
     e.code="GROQ_PROVIDER_ERROR";e.statusCode=status;throw e;
   }
   const content=data?.choices?.[0]?.message?.content;
