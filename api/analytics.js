@@ -12,8 +12,10 @@ module.exports=async function(req,res){
     const transactions=user.transactions||[];
     const sum=(rows,type)=>rows.filter(row=>row.type===type).reduce((total,row)=>total+Number(row.amount||0),0);
     const now=new Date(),currentMonth=monthKey(now);
-    const previousDate=new Date(now.getTime());previousDate.setUTCDate(1);previousDate.setUTCMonth(previousDate.getUTCMonth()-1);
-    const previousMonth=monthKey(previousDate);
+    const [currentYear,currentMonthNumber]=currentMonth.split("-").map(Number);
+    const previousDate=new Date(Date.UTC(currentYear,currentMonthNumber-1,1));
+    previousDate.setUTCMonth(previousDate.getUTCMonth()-1);
+    const previousMonth=previousDate.getUTCFullYear()+"-"+String(previousDate.getUTCMonth()+1).padStart(2,"0");
     const currentRows=transactions.filter(row=>String(row.date).startsWith(currentMonth));
     const previousRows=transactions.filter(row=>String(row.date).startsWith(previousMonth));
     const income=sum(transactions,"income"),expense=sum(transactions,"expense");
@@ -27,8 +29,8 @@ module.exports=async function(req,res){
     const categories=Object.entries(categoryTotals).sort((a,b)=>b[1]-a[1])
       .slice(0,8).map(([category,total])=>({category,total}));
     const monthly=Array.from({length:12},(_,index)=>{
-      const date=new Date(now.getFullYear(),now.getMonth()-11+index,1);
-      const key=date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
+      const date=new Date(Date.UTC(currentYear,currentMonthNumber-1-11+index,1));
+      const key=date.getUTCFullYear()+"-"+String(date.getUTCMonth()+1).padStart(2,"0");
       const rows=transactions.filter(row=>String(row.date).startsWith(key));
       return {month:key,income:sum(rows,"income"),expense:sum(rows,"expense")};
     });
