@@ -130,7 +130,14 @@
   });
   async function exportExcel(){
     try{
-      const response=await fetch("/api/export?format=xls",{credentials:"same-origin"});
+      const params=new URLSearchParams({format:"xls"});
+      const month=$("#transactionMonthFilter")?.value||"";
+      const type=$("#transactionTypeFilter")?.value||"all";
+      const search=$("#transactionSearch")?.value?.trim()||"";
+      if(month)params.set("month",month);
+      if(type!=="all")params.set("type",type);
+      if(search)params.set("search",search);
+      const response=await fetch("/api/export?"+params.toString(),{credentials:"same-origin"});
       if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||"Export gagal.");}
       const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download="grey-finance-transactions.xls";document.body.append(a);a.click();a.remove();
