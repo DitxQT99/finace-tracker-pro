@@ -31,7 +31,7 @@ module.exports = async function(req, res) {
         if (data.recurring.length >= 50) return data;
         saved = {
           id: randomUUID(), type, amount, category, note, frequency,
-          startDate, nextDate: startDate, active: true,
+          startDate, nextDate: startDate, anchorDay: Number(startDate.slice(-2)), active: true,
           createdAt: new Date().toISOString()
         };
         data.recurring.unshift(saved);
@@ -39,7 +39,10 @@ module.exports = async function(req, res) {
       });
       if (!user) return res.status(404).json({error:"Akun tidak ditemukan."});
       if (!saved) return res.status(400).json({error:"Maksimal 50 aturan transaksi rutin."});
-      return res.status(201).json({recurring:saved});
+      await applyDueRecurring(session.id);
+      const refreshed = await getUserById(session.id);
+      const currentRule = (refreshed?.recurring || []).find(item => item.id === saved.id) || saved;
+      return res.status(201).json({recurring:currentRule});
     }
     if (req.method === "PATCH") {
       const body = req.body || {};
