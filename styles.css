@@ -5,3 +5,14 @@
 #view-recurring .goal-actions button{padding:6px 8px}
 @media(max-width:760px){#advancedInsights{grid-template-columns:repeat(2,minmax(0,1fr))}#view-reports .section-intro{align-items:flex-start}}
 @media print{#advancedInsights{break-inside:avoid}}
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body, .main-area { background: #fff !important; color: #111 !important; }
+  #view-reports .section-intro { margin-bottom: 12px; }
+  #advancedInsights, .report-grid, .report-insight { break-inside: avoid; }
+  #view-reports .panel, #view-reports .metric-card { box-shadow: none !important; background: #fff !important; color: #111 !important; }
+  #view-reports .metric-card strong, #view-reports h2, #view-reports h3 { color: #111 !important; }
+  #view-reports .metric-foot, #view-reports p, #view-reports .eyebrow { color: #555 !important; }
+  #view-reports button, #toastRegion { display: none !important; }
+}
