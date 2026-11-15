@@ -300,6 +300,7 @@
       renderTransactions();
       renderPlans();
       if(state.view==="reports") renderReport();
+      document.dispatchEvent(new Event("greyfinance:ready"));
     } catch (error) { notify(error.message,"error"); }
   }
   function openTransaction(row=null) {
