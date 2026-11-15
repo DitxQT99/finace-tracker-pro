@@ -1,7 +1,10 @@
 (() => {
   "use strict";
   const $ = (selector, root=document) => root.querySelector(selector);
-  const money = value => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(value||0));
+  const money = value => {
+    const currency = $("#currencySelect")?.value || "IDR";
+    return new Intl.NumberFormat("id-ID",{style:"currency",currency,maximumFractionDigits:0}).format(Number(value||0));
+  };
   const escapeHTML = value => String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
   const nav = document.createElement("button");
   nav.className = "nav-item";
@@ -104,6 +107,7 @@
     };
     try{await api("/api/recurring",{method:"POST",body});closeModal();notify("Recurring rule saved.");loadRecurring();}
     catch(error){notify(error.message,true);}
+    finally { submit.disabled = false; submit.textContent = originalLabel; }
   });
   document.addEventListener("click",async event=>{
     const toggle=event.target.closest("[data-toggle-recurring]");
@@ -123,7 +127,8 @@
       const response=await fetch("/api/export?format=xls",{credentials:"same-origin"});
       if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||"Export gagal.");}
       const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");
-      a.href=url;a.download="grey-finance-transactions.xls";a.click();URL.revokeObjectURL(url);
+      a.href=url;a.download="grey-finance-transactions.xls";document.body.append(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
       notify("File Excel berhasil disiapkan.");
     }catch(error){notify(error.message,true);}
   }
@@ -142,5 +147,6 @@
     }catch(error){}
   }
   document.querySelectorAll('[data-view="reports"]').forEach(button=>button.addEventListener("click",renderInsights));
+  $("#currencySelect")?.addEventListener("change",()=>{renderInsights();loadRecurring();});
   document.addEventListener("greyfinance:ready",renderInsights);
 })();
