@@ -287,15 +287,12 @@
   }
   async function refreshAll() {
     try {
-      const results=await Promise.all([
-        api("/api/analytics"),
-        api("/api/transactions"),
-        api("/api/plans")
-      ]);
+      const transactionResult=await api("/api/transactions");
+      const results=await Promise.all([api("/api/analytics"),api("/api/plans")]);
+      state.transactions=transactionResult.transactions||[];
       state.analytics=results[0];
-      state.transactions=results[1].transactions||[];
-      state.budgets=results[2].budgets||[];
-      state.goals=results[2].goals||[];
+      state.budgets=results[1].budgets||[];
+      state.goals=results[1].goals||[];
       renderDashboard();
       renderTransactions();
       renderPlans();
