@@ -5,6 +5,7 @@
     const currency = $("#currencySelect")?.value || "IDR";
     return new Intl.NumberFormat("id-ID",{style:"currency",currency,maximumFractionDigits:0}).format(Number(value||0));
   };
+  const balancesHidden = () => $("#privacyToggle")?.title === "Tampilkan saldo";
   const escapeHTML = value => String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
   const nav = document.createElement("button");
   nav.className = "nav-item";
@@ -79,7 +80,7 @@
       if(!rules.length){list.innerHTML='<div class="panel empty-state">Belum ada transaksi rutin. Tambahkan gaji atau tagihan yang berulang.</div>';return;}
       list.innerHTML=rules.map(rule=>{
         const label=rule.frequency==="monthly"?"Bulanan":rule.frequency==="weekly"?"Mingguan":"Harian";
-        return '<article class="goal-card"><div class="goal-card-head"><div><h3>'+escapeHTML(rule.category)+'</h3><small>'+label+' · '+(rule.type==="income"?"Pemasukan":"Pengeluaran")+'</small></div><span class="metric-icon '+(rule.type==="income"?"green":"red")+'">'+(rule.type==="income"?"↗":"↘")+'</span></div><div class="goal-amounts"><strong>'+money(rule.amount)+'</strong><span>'+(rule.active?"Aktif":"Dijeda")+'</span></div><div class="goal-progress"><div class="goal-progress-top"><span>Jadwal berikutnya</span><b>'+escapeHTML(rule.nextDate||"—")+'</b></div><div class="progress-track"><div class="progress-fill" style="width:'+(rule.active?100:0)+'%"></div></div></div><div class="goal-actions"><button data-toggle-recurring="'+escapeHTML(rule.id)+'" data-active="'+(!rule.active)+'">'+(rule.active?"Pause":"Activate")+'</button><button data-delete-recurring="'+escapeHTML(rule.id)+'">Remove ×</button></div></article>';
+        return '<article class="goal-card"><div class="goal-card-head"><div><h3>'+escapeHTML(rule.category)+'</h3><small>'+label+' · '+(rule.type==="income"?"Pemasukan":"Pengeluaran")+'</small></div><span class="metric-icon '+(rule.type==="income"?"green":"red")+'">'+(rule.type==="income"?"↗":"↘")+'</span></div><div class="goal-amounts"><strong class="money-display'+(balancesHidden()?' privacy-hidden':'')+'">'+money(rule.amount)+'</strong><span>'+(rule.active?"Aktif":"Dijeda")+'</span></div><div class="goal-progress"><div class="goal-progress-top"><span>Jadwal berikutnya</span><b>'+escapeHTML(rule.nextDate||"—")+'</b></div><div class="progress-track"><div class="progress-fill" style="width:'+(rule.active?100:0)+'%"></div></div></div><div class="goal-actions"><button data-toggle-recurring="'+escapeHTML(rule.id)+'" data-active="'+(!rule.active)+'">'+(rule.active?"Pause":"Activate")+'</button><button data-delete-recurring="'+escapeHTML(rule.id)+'">Remove ×</button></div></article>';
       }).join("");
     } catch(error){list.innerHTML='<div class="panel empty-state">'+escapeHTML(error.message)+'</div>';}
   }
@@ -146,6 +147,8 @@
       const data=await api("/api/analytics"),insights=data.insights||{};
       $("#insightSavingRate").textContent=(insights.savingRate??0)+"%";
       $("#insightDailyAverage").textContent=money(insights.dailyAverageExpense||0);
+      $("#insightDailyAverage").classList.add("money-display");
+      $("#insightDailyAverage").classList.toggle("privacy-hidden",balancesHidden());
       const change=Number(insights.expenseChange||0);
       $("#insightExpenseChange").textContent=(change>0?"+":"")+change+"%";
       $("#insightTopCategory").textContent=insights.topCategory?.category||"—";
