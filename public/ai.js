@@ -3,7 +3,7 @@
   const $ = (selector, root=document) => root.querySelector(selector);
   const money = value => new Intl.NumberFormat("id-ID",{style:"currency",currency:$("#currencySelect")?.value||"IDR",maximumFractionDigits:0}).format(Number(value||0));
   const balancesHidden = () => $("#privacyToggle")?.title === "Tampilkan saldo";
-  const state = {messages:[],drafts:new Map(),busy:false};
+  const state = {messages:[],drafts:new Map(),busy:false,imageFile:null,imageData:null};
   async function api(path,options={}) {
     const response=await fetch(path,{method:options.method||"GET",credentials:"same-origin",headers:options.body?{"Content-Type":"application/json"}:{},body:options.body?JSON.stringify(options.body):undefined});
     const data=await response.json().catch(()=>({}));
@@ -17,7 +17,7 @@
   const nav=document.createElement("button");nav.className="nav-item";nav.dataset.view="grey-ai";nav.innerHTML='<span class="nav-icon">✧</span>Grey AI';
   const overviewNav=$('.side-nav [data-view="overview"]');if(overviewNav)overviewNav.after(nav);
   const view=document.createElement("section");view.id="view-grey-ai";view.className="view";
-  view.innerHTML='<div class="section-intro ai-section-intro"><div><div class="eyebrow">YOUR PERSONAL FINANCE COPILOT</div><h2>Grey AI</h2><p>Ngobrol soal transaksi, pengeluaran, anggaran, dan tabunganmu.</p></div><span class="ai-live-pill"><i></i> READY TO HELP</span></div><div class="ai-chat-panel panel"><div class="ai-chat-top"><div class="ai-avatar">✦</div><div><b>Grey AI Assistant</b><small>Finance-aware · Approval required</small></div><span class="ai-secure">PRIVATE SESSION</span></div><div class="ai-privacy-note">Grey AI membaca ringkasan keuangan dan hingga 100 transaksi terbaru. Pesan serta konteks keuangan dikirim ke model AI untuk diproses. Jangan kirim kata sandi, PIN, atau data kartu.</div><div id="aiChatMessages" class="ai-chat-messages" aria-live="polite"></div><div class="ai-suggestions"><button type="button" data-ai-prompt="Ringkas kondisi keuanganku bulan ini.">Ringkas keuanganku</button><button type="button" data-ai-prompt="Apa kategori pengeluaran terbesarku?">Pengeluaran terbesar</button><button type="button" data-ai-prompt="Bagaimana progres target tabunganku?">Progres tabungan</button></div><form id="aiChatForm" class="ai-chat-composer"><textarea id="aiChatInput" rows="1" maxlength="1200" placeholder="Contoh: Aku makan tempek 50k..." required></textarea><button id="aiSendBtn" type="submit" aria-label="Kirim pesan"><span>↑</span></button></form><div class="ai-composer-foot"><span>Enter untuk kirim · Shift + Enter untuk baris baru</span><span id="aiCharCount">0/1200</span></div></div>';
+  view.innerHTML='<div class="section-intro ai-section-intro"><div><div class="eyebrow">YOUR PERSONAL FINANCE COPILOT</div><h2>Grey AI</h2><p>Ngobrol soal transaksi, pengeluaran, anggaran, dan tabunganmu.</p></div><span class="ai-live-pill"><i></i> READY TO HELP</span></div><div class="ai-chat-panel panel"><div class="ai-chat-top"><div class="ai-avatar">✦</div><div><b>Grey AI Assistant</b><small>Finance-aware · Approval required</small></div><span class="ai-secure">PRIVATE SESSION</span></div><div class="ai-privacy-note">Grey AI membaca ringkasan keuangan dan hingga 100 transaksi terbaru. Foto diproses Google Gemini dan tidak disimpan ke riwayat. Jangan kirim kata sandi, PIN, atau data kartu.</div><div id="aiChatMessages" class="ai-chat-messages" aria-live="polite"></div><div class="ai-suggestions"><button type="button" data-ai-prompt="Ringkas kondisi keuanganku bulan ini.">Ringkas keuanganku</button><button type="button" data-ai-prompt="Apa kategori pengeluaran terbesarku?">Pengeluaran terbesar</button><button type="button" data-ai-prompt="Bagaimana progres target tabunganku?">Progres tabungan</button></div><div id="aiImagePreview" class="ai-image-preview hidden"><img id="aiImagePreviewImg" alt="Pratinjau foto"><button id="aiRemoveImage" type="button" aria-label="Hapus foto">×</button></div><form id="aiChatForm" class="ai-chat-composer"><div class="ai-attach-actions"><button id="aiCameraBtn" type="button" aria-label="Ambil foto" title="Ambil foto">⌁</button><button id="aiGalleryBtn" type="button" aria-label="Pilih dari galeri" title="Pilih dari galeri">▧</button></div><textarea id="aiChatInput" rows="1" maxlength="1200" placeholder="Tanya atau foto struk..."></textarea><button id="aiSendBtn" type="submit" aria-label="Kirim pesan"><span>↑</span></button></form><input id="aiCameraInput" class="ai-file-input" type="file" accept="image/*" capture="environment"><input id="aiGalleryInput" class="ai-file-input" type="file" accept="image/jpeg,image/png,image/webp"><div class="ai-composer-foot"><span>Enter untuk kirim · Shift + Enter untuk baris baru</span><span id="aiCharCount">0/1200</span></div></div>';
   const transactionView=$("#view-transactions");if(transactionView)transactionView.before(view);
   function showView(){
     document.querySelectorAll(".view").forEach(item=>item.classList.toggle("active",item===view));
@@ -131,19 +131,36 @@
     catch(error){list.replaceChildren(el("div","ai-load-error",error.message));}
   }
   function setSending(sending){
-    state.busy=sending;$("#aiSendBtn").disabled=sending;$("#aiSendBtn").innerHTML=sending?'<span class="ai-spinner"></span>':'<span>↑</span>';$("#aiChatInput").disabled=sending;
+    state.busy=sending;$("#aiSendBtn").disabled=sending;$("#aiCameraBtn").disabled=sending;$("#aiGalleryBtn").disabled=sending;$("#aiSendBtn").innerHTML=sending?'<span class="ai-spinner"></span>':'<span>↑</span>';$("#aiChatInput").disabled=sending;
   }
+
+  function clearImage(){state.imageFile=null;state.imageData=null;$("#aiImagePreview").classList.add("hidden");$("#aiImagePreviewImg").removeAttribute("src");$("#aiCameraInput").value="";$("#aiGalleryInput").value="";}
+  function chooseImage(file){
+    if(!file)return;
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type)){notify("Pilih foto JPG, PNG, atau WebP.",true);return;}
+    if(file.size>5*1024*1024){notify("Ukuran foto maksimal 5 MB.",true);return;}
+    const reader=new FileReader();
+    reader.onload=()=>{state.imageFile=file;state.imageData=String(reader.result||"");$("#aiImagePreviewImg").src=state.imageData;$("#aiImagePreview").classList.remove("hidden");};
+    reader.onerror=()=>notify("Foto tidak bisa dibaca. Coba pilih ulang.",true);
+    reader.readAsDataURL(file);
+  }
+  $("#aiCameraBtn").addEventListener("click",()=>$("#aiCameraInput").click());
+  $("#aiGalleryBtn").addEventListener("click",()=>$("#aiGalleryInput").click());
+  $("#aiCameraInput").addEventListener("change",event=>chooseImage(event.target.files?.[0]));
+  $("#aiGalleryInput").addEventListener("change",event=>chooseImage(event.target.files?.[0]));
+  $("#aiRemoveImage").addEventListener("click",clearImage);
+
   $("#aiChatInput").addEventListener("input",()=>{$("#aiCharCount").textContent=$("#aiChatInput").value.length+"/1200";});
   $("#aiChatInput").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();$("#aiChatForm").requestSubmit();}});
   document.querySelectorAll("[data-ai-prompt]").forEach(button=>button.addEventListener("click",()=>{$("#aiChatInput").value=button.dataset.aiPrompt;$("#aiCharCount").textContent=$("#aiChatInput").value.length+"/1200";$("#aiChatInput").focus();}));
   $("#aiChatForm").addEventListener("submit",async event=>{
     event.preventDefault();if(state.busy)return;
-    const input=$("#aiChatInput"),message=input.value.trim();if(!message)return;
+    const input=$("#aiChatInput"),message=input.value.trim(),image=state.imageData;if(!message&&!image)return;
     setSending(true);
     try{
-      const result=await api("/api/assistant",{method:"POST",body:{action:"chat",message}});
+      const result=await api("/api/assistant",{method:"POST",body:{action:"chat",message,image}});
       state.messages.push(result.userMessage,result.assistantMessage);if(result.draft)state.drafts.set(result.draft.id,result.draft);
-      input.value="";$("#aiCharCount").textContent="0/1200";renderMessages();
+      input.value="";$("#aiCharCount").textContent="0/1200";clearImage();renderMessages();
     }catch(error){notify(error.message,true);}
     finally{setSending(false);input.focus();}
   });
