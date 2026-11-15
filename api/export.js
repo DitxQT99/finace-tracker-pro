@@ -12,8 +12,13 @@ module.exports = async function(req, res) {
     const user = await getUserById(session.id);
     if (!user) return res.status(401).json({error:"Akun tidak ditemukan."});
     const month = /^\d{4}-\d{2}$/.test(req.query.month || "") ? req.query.month : "";
-    const rows = (user.transactions || []).filter(row => !month || String(row.date).startsWith(month))
-      .sort((a,b) => String(b.date).localeCompare(String(a.date)));
+    const type = ["income","expense"].includes(req.query.type) ? req.query.type : "";
+    const search = String(req.query.search || "").trim().toLowerCase().slice(0,60);
+    const rows = (user.transactions || []).filter(row =>
+      (!month || String(row.date).startsWith(month)) &&
+      (!type || row.type === type) &&
+      (!search || String(row.category + " " + (row.note || "")).toLowerCase().includes(search))
+    ).sort((a,b) => String(b.date).localeCompare(String(a.date)));
     const headers = ["Date","Type","Category","Amount","Note"];
     const cells = values => "<Row>" + values.map((value,index) => {
       const numeric = index === 3 && Number.isFinite(Number(value));
