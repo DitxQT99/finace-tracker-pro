@@ -307,6 +307,7 @@
       document.dispatchEvent(new Event("greyfinance:ready"));
     } catch (error) { notify(error.message,"error"); }
   }
+  window.greyFinanceRefresh = refreshAll;
   function openTransaction(row=null) {
     $("#transactionForm").reset();
     $("#transactionId").value=row ? row.id : "";
