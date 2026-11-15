@@ -252,12 +252,19 @@
         return '<div class="budget-preview-item"><div class="budget-preview-top"><span>'+escapeHTML(row.category)+'</span><b>'+Math.round(pct)+'%</b></div><div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div></div>';
       }).join("") : '<div class="empty-mini">Create a budget to stay on track.</div>';
     }
+    const goalContributed=state.goals.reduce((sum,g)=>sum+Number(g.contributed_amount??g.saved_amount??0),0);
+    const goalWithdrawn=state.goals.reduce((sum,g)=>sum+Number(g.withdrawn_amount||0),0);
+    const goalBalance=state.goals.reduce((sum,g)=>sum+Number(g.saved_amount||0),0);
+    changeAmount($("#goalTotalContributed"),goalContributed);
+    changeAmount($("#goalTotalWithdrawn"),goalWithdrawn);
+    changeAmount($("#goalTotalBalance"),goalBalance);
+    ["goalTotalContributed","goalTotalWithdrawn","goalTotalBalance"].forEach(id=>$("#"+id)?.classList.toggle("privacy-hidden",state.hideBalances));
     const goalsList = $("#goalsList");
     if (goalsList) {
       if (!state.goals.length) goalsList.innerHTML='<div class="panel empty-state">Belum ada target tabungan. Mulai dari satu tujuan kecil.</div>';
       else goalsList.innerHTML = state.goals.map(row=>{
-        const target=Number(row.target_amount||0), saved=Number(row.saved_amount||0), pct=target?Math.min(100,saved/target*100):0;
-        return '<article class="goal-card"><div class="goal-card-head"><div><h3>'+escapeHTML(row.title)+'</h3><small>'+(row.deadline?'Target '+shortDate(row.deadline):'No deadline')+'</small></div><span class="metric-icon green">◎</span></div><div class="goal-amounts"><strong class="money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+money(saved)+'</strong><span>of '+money(target)+'</span></div><div class="goal-progress"><div class="goal-progress-top"><span>Progress</span><b>'+Math.round(pct)+'%</b></div><div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div></div><div class="goal-actions"><button data-add-progress="'+escapeHTML(row.id)+'">＋ Add savings</button><button data-delete-plan="goal" data-id="'+escapeHTML(row.id)+'">Remove ×</button></div></article>';
+        const target=Number(row.target_amount||0), saved=Number(row.saved_amount||0), contributed=Number(row.contributed_amount??saved), withdrawn=Number(row.withdrawn_amount||0), pct=target?Math.min(100,saved/target*100):0;
+        return '<article class="goal-card"><div class="goal-card-head"><div><h3>'+escapeHTML(row.title)+'</h3><small>'+(row.deadline?'Target '+shortDate(row.deadline):'No deadline')+'</small></div><span class="metric-icon green">◎</span></div><div class="goal-amounts"><strong class="money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+money(saved)+'</strong><span>saldo / '+money(target)+'</span></div><div class="goal-stats"><span>Terkumpul <b class="money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+money(contributed)+'</b></span><span>Keluar <b class="money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+money(withdrawn)+'</b></span></div><div class="goal-progress"><div class="goal-progress-top"><span>Progress saldo</span><b>'+Math.round(pct)+'%</b></div><div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div></div><div class="goal-actions"><button data-add-progress="'+escapeHTML(row.id)+'">＋ Tambah</button><button data-withdraw-progress="'+escapeHTML(row.id)+'">− Tarik</button><button data-delete-plan="goal" data-id="'+escapeHTML(row.id)+'">Hapus ×</button></div></article>';
       }).join("");
     }
     const goalPreview = $("#goalPreview");
@@ -405,15 +412,38 @@
     if(add) {
       const goal=state.goals.find(item=>item.id===add.dataset.addProgress);
       if(!goal) return;
-      const input=prompt("Berapa nominal tabungan yang ingin ditambahkan?");
+      const input=prompt("Nominal yang ingin ditambahkan ke tabungan:");
       if(input===null) return;
       const amount=Number(input);
       if(!Number.isFinite(amount)||amount<=0) { notify("Masukkan nominal yang valid.","error"); return; }
-      try { await api("/api/plans",{method:"PATCH",body:{type:"goal",id:goal.id,add_amount:amount}}); await refreshAll(); notify("Progress tabungan diperbarui."); }
+      try { await api("/api/plans",{method:"PATCH",body:{type:"goal",id:goal.id,add_amount:amount}}); await refreshAll(); notify("Tabungan berhasil ditambahkan."); }
+      catch(error) { notify(error.message,"error"); }
+    }
+    const withdraw=event.target.closest("[data-withdraw-progress]");
+    if(withdraw) {
+      const goal=state.goals.find(item=>item.id===withdraw.dataset.withdrawProgress);
+      if(!goal) return;
+      const input=prompt("Nominal yang ingin ditarik dari saldo tabungan ("+money(goal.saved_amount)+"):");
+      if(input===null) return;
+      const amount=Number(input);
+      if(!Number.isFinite(amount)||amount<=0) { notify("Masukkan nominal yang valid.","error"); return; }
+      try { await api("/api/plans",{method:"PATCH",body:{type:"goal",id:goal.id,withdraw_amount:amount}}); await refreshAll(); notify("Penarikan tabungan berhasil dicatat."); }
       catch(error) { notify(error.message,"error"); }
     }
   });
   ["transactionSearch","transactionTypeFilter","transactionMonthFilter"].forEach(id=>$("#"+id).addEventListener(id==="transactionSearch"?"input":"change",renderTransactions));
+
+  const typePicker=$("#transactionTypePicker");
+  if(typePicker){
+    const native=$("#transactionTypeFilter"),trigger=typePicker.querySelector(".select-trigger"),options=typePicker.querySelector(".select-options");
+    const sync=()=>{trigger.querySelector("span").textContent=native.selectedOptions[0]?.textContent||"All types";options.querySelectorAll("[role=option]").forEach(btn=>btn.setAttribute("aria-selected",String(btn.dataset.value===native.value)));};
+    trigger.addEventListener("click",()=>{const open=typePicker.classList.toggle("open");trigger.setAttribute("aria-expanded",String(open));});
+    options.addEventListener("click",event=>{const option=event.target.closest("[data-value]");if(!option)return;native.value=option.dataset.value;native.dispatchEvent(new Event("change",{bubbles:true}));sync();typePicker.classList.remove("open");trigger.setAttribute("aria-expanded","false");});
+    native.addEventListener("change",sync);
+    document.addEventListener("click",event=>{if(!typePicker.contains(event.target)){typePicker.classList.remove("open");trigger.setAttribute("aria-expanded","false");}});
+    sync();
+  }
+
   $("#clearFilters").addEventListener("click",()=>{$("#transactionSearch").value="";$("#transactionTypeFilter").value="all";$("#transactionMonthFilter").value="";renderTransactions();});
   $("#chartRange").addEventListener("change",event=>{state.chartRange=Number(event.target.value)||6;renderChart($("#cashflowChart"),state.analytics?.monthly||[],state.chartRange);});
   $("#privacyToggle").addEventListener("click",()=>setBalancesHidden(!state.hideBalances));
