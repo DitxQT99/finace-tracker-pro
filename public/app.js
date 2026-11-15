@@ -83,12 +83,14 @@
     state.theme = theme;
     document.body.classList.toggle("light-theme", theme === "light");
     $("#themeSelect").value = theme;
+    window.greyFinanceSyncSelects?.();
     $("#themeToggle").textContent = theme === "dark" ? "☼" : "☾";
     localStorage.setItem("grey-theme", theme);
   }
   function setCurrency(currency) {
     state.currency = currencyMeta[currency] ? currency : "IDR";
     $("#currencySelect").value = state.currency;
+    window.greyFinanceSyncSelects?.();
     $("#currencyPrefix").textContent = currencyMeta[state.currency].symbol;
     $("#planCurrencyPrefix").textContent = currencyMeta[state.currency].symbol;
     localStorage.setItem("grey-currency", state.currency);
@@ -320,6 +322,7 @@
     $("#transactionCategory").value=row ? row.category : "";
     $("#transactionDate").value=row ? row.date : new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
     $("#transactionNote").value=row ? row.note || "" : "";
+    window.greyFinanceSyncSelects?.();
     $("#transactionModal").classList.remove("hidden");
     $("#transactionAmount").focus();
   }
@@ -375,6 +378,7 @@
     const id=$("#transactionId").value;
     const type=$('input[name="transactionType"]:checked').value;
     const body={type,amount:Number($("#transactionAmount").value),category:$("#transactionCategory").value,date:$("#transactionDate").value,note:$("#transactionNote").value.trim()};
+    if(!body.category){notify("Pilih kategori transaksi terlebih dahulu.","error");window.greyFinanceSyncSelects?.();return;}
     try {
       await api("/api/transactions",{method:id?"PATCH":"POST",body:id?{...body,id}:body});
       closeModals(); await refreshAll(); notify(id?"Transaction updated.":"Transaction saved.");
