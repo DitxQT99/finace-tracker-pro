@@ -172,6 +172,7 @@ module.exports=async function(req,res){
       if(!draftId||draftId.length>80)return res.status(400).json({error:"Draft tidak valid."});
       let result=null,problem=null;
       const updated=await mutateUser(session.id,user=>{
+        result=null;problem=null;
         user.aiDrafts=Array.isArray(user.aiDrafts)?user.aiDrafts:[];
         user.transactions=Array.isArray(user.transactions)?user.transactions:[];
         const draft=user.aiDrafts.find(x=>x.id===draftId);

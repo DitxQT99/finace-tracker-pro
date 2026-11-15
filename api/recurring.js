@@ -27,6 +27,7 @@ module.exports = async function(req, res) {
       }
       let saved = null;
       const user = await mutateUser(session.id, data => {
+        saved = null;
         data.recurring = Array.isArray(data.recurring) ? data.recurring : [];
         if (data.recurring.length >= 50) return data;
         saved = {
@@ -47,6 +48,7 @@ module.exports = async function(req, res) {
       if (!id || typeof body.active !== "boolean") return res.status(400).json({error:"Perubahan aturan tidak valid."});
       let saved = null;
       const user = await mutateUser(session.id, data => {
+        saved = null;
         const rule = (data.recurring || []).find(item => item.id === id);
         if (rule) { rule.active = body.active; saved = rule; }
         return data;
@@ -60,6 +62,7 @@ module.exports = async function(req, res) {
       if (!id) return res.status(400).json({error:"Aturan tidak valid."});
       let removed = false;
       const user = await mutateUser(session.id, data => {
+        removed = false;
         const rules = data.recurring || [];
         data.recurring = rules.filter(item => item.id !== id);
         removed = rules.length !== data.recurring.length;
