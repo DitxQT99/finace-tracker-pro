@@ -12,7 +12,7 @@
     "check": "node --check app.js && node --check lib/core.js && node --check lib/recurring.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js && node --check api/recurring.js && node --check api/export.js && node --check api/health.js && node --check api/assistant.js && node --check public/app.js && node --check public/features.js && node --check public/ai.js"
   },
   "dependencies": {
-    "@vercel/blob": "^2.0.0",
+    "@vercel/blob": "2.8.2",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2"
   }
