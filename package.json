@@ -1,6 +1,6 @@
 {
   "name": "grey-finance",
-  "version": "2.2.0",
+  "version": "2.3.1",
   "private": true,
   "description": "Grey Finance — private Vercel Blob-backed personal finance app",
   "engines": {
@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node -e 0",
     "postinstall": "npm run check",
-    "check": "node --check app.js && node --check lib/core.js && node --check lib/recurring.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js && node --check api/recurring.js && node --check api/export.js && node --check api/health.js && node --check public/features.js"
+    "check": "node --check app.js && node --check lib/core.js && node --check lib/recurring.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js && node --check api/recurring.js && node --check api/export.js && node --check api/health.js && node --check public/app.js && node --check public/features.js"
   },
   "dependencies": {
     "@vercel/blob": "^2.0.0",
