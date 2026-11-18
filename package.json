@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "node -e 0",
-    "postinstall": "npm run check",
-    "check": "node --check app.js && node --check lib/accounts.js && node --check api/accounts.js && node --check api/transfers.js && node --check public/accounts.js && node --check lib/core.js && node --check lib/recurring.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js && node --check api/recurring.js && node --check api/export.js && node --check api/health.js && node --check api/assistant.js && node --check public/app.js && node --check public/features.js && node --check public/ai.js"
+    "postinstall": "npm run check && node scripts/sync-logos.js",
+    "check": "node --check app.js && node --check lib/accounts.js && node --check api/accounts.js && node --check api/transfers.js && node --check public/accounts.js && node --check lib/core.js && node --check lib/recurring.js && node --check api/auth.js && node --check api/transactions.js && node --check api/analytics.js && node --check api/plans.js && node --check api/recurring.js && node --check api/export.js && node --check api/health.js && node --check api/assistant.js && node --check public/app.js && node --check public/features.js && node --check public/ai.js && node --check scripts/sync-logos.js"
   },
   "dependencies": {
     "@vercel/blob": "2.8.2",
