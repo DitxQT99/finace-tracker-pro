@@ -306,14 +306,14 @@
   }
   async function refreshAll() {
     try {
-      const transactionResult=await api("/api/transactions");
-      const accountResult=await api("/api/accounts");
-      const results=await Promise.all([api("/api/analytics"),api("/api/plans")]);
+      const [transactionResult,accountResult,analyticsResult,plansResult]=await Promise.all([
+        api("/api/transactions"),api("/api/accounts"),api("/api/analytics"),api("/api/plans")
+      ]);
       state.transactions=transactionResult.transactions||[];
       state.accounts=accountResult.accounts||[];
-      state.analytics=results[0];
-      state.budgets=results[1].budgets||[];
-      state.goals=results[1].goals||[];
+      state.analytics=analyticsResult;
+      state.budgets=plansResult.budgets||[];
+      state.goals=plansResult.goals||[];
       renderDashboard();
       renderTransactions();
       renderPlans();
