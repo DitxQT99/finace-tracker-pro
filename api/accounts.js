@@ -20,12 +20,8 @@ module.exports = async function(req, res) {
     if (req.method === "GET") {
       let user = await getUserById(session.id);
       if (!user) return res.status(401).json({error:"Akun tidak ditemukan."});
-      const needsMigration = !Array.isArray(user.accounts) || !user.accounts.length ||
-        (user.transactions || []).some(row => !row.accountId && !["transfer_in","transfer_out"].includes(row.type));
-      if (needsMigration) {
-        await mutateUser(session.id, data => ensureAccountData(data));
-        user = await getUserById(session.id);
-      }
+      // Build a legacy-compatible view without mutating storage during GET.
+      ensureAccountData(user);
       const transactions = user.transactions || [];
       const active = (user.accounts || []).filter(account => !account.archivedAt);
       const archived = (user.accounts || []).filter(account => !!account.archivedAt);
