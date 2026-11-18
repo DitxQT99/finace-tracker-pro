@@ -1,3 +1,91 @@
 const{randomUUID}=require("crypto"),{requireUser,mutateUser,getUserById,handleError,validDate}=require("../lib/core");
 const{applyDueRecurring}=require("../lib/recurring");
-module.exports=async function(req,res){res.setHeader("Cache-Control","no-store");if(req.method==="OPTIONS")return res.status(204).end();try{const s=requireUser(req,res);if(!s)return;if(req.method==="GET"){await applyDueRecurring(s.id);const u=await getUserById(s.id);if(!u)return res.status(401).json({error:"Akun tidak ditemukan."});let a=u.transactions||[],t=["income","expense"].includes(req.query.type)?req.query.type:null,m=/^\d{4}-\d{2}$/.test(req.query.month||"")?req.query.month:null,q=String(req.query.search||"").trim().toLowerCase().slice(0,60);a=a.filter(x=>(!t||x.type===t)&&(!m||String(x.date).startsWith(m))&&(!q||String(x.category+" "+x.note).toLowerCase().includes(q)));a.sort((x,y)=>String(y.date).localeCompare(String(x.date))||String(y.createdAt||"").localeCompare(String(x.createdAt||"")));return res.status(200).json({transactions:a.slice(0,500)});}if(req.method==="POST"||req.method==="PATCH"){const b=req.body||{},type=b.type,amount=Number(b.amount),category=String(b.category||"").trim(),note=String(b.note||"").trim().slice(0,160),date=b.date;if(!["income","expense"].includes(type)||!Number.isFinite(amount)||amount<=0||amount>999999999999999||!category||category.length>60||!validDate(date))return res.status(400).json({error:"Data transaksi tidak valid."});const id=req.method==="PATCH"?String(b.id||""):randomUUID();let saved=null;const u=await mutateUser(s.id,d=>{saved=null;d.transactions=Array.isArray(d.transactions)?d.transactions:[];const item={id,type,amount,category,note,date,createdAt:new Date().toISOString()};if(req.method==="PATCH"){const i=d.transactions.findIndex(x=>x.id===id);if(i>=0){item.createdAt=d.transactions[i].createdAt||item.createdAt;d.transactions[i]=item;saved=item;}}else{d.transactions.unshift(item);saved=item;}return d;});if(!u)return res.status(404).json({error:"Akun tidak ditemukan."});if(!saved)return res.status(404).json({error:"Transaksi tidak ditemukan."});return res.status(req.method==="POST"?201:200).json({transaction:saved});}if(req.method==="DELETE"){const id=String(req.query.id||"");let removed=false;const u=await mutateUser(s.id,d=>{removed=false;const n=(d.transactions||[]).length;d.transactions=(d.transactions||[]).filter(x=>x.id!==id);removed=n!==d.transactions.length;return d;});if(!u)return res.status(404).json({error:"Akun tidak ditemukan."});if(!removed)return res.status(404).json({error:"Transaksi tidak ditemukan."});return res.status(200).json({ok:true});}return res.status(405).json({error:"Method not allowed."});}catch(e){return handleError(res,e);}};
+const{ensureAccountData,activeAccount}=require("../lib/accounts");
+module.exports=async function(req,res){
+  res.setHeader("Cache-Control","no-store");
+  if(req.method==="OPTIONS")return res.status(204).end();
+  try{
+    const session=requireUser(req,res);if(!session)return;
+    if(req.method==="GET"){
+      await applyDueRecurring(session.id);
+      let user=await getUserById(session.id);
+      if(!user)return res.status(401).json({error:"Akun tidak ditemukan."});
+      const needsMigration=!Array.isArray(user.accounts)||!user.accounts.length||
+        (user.transactions||[]).some(row=>!row.accountId&&!["transfer_in","transfer_out"].includes(row.type));
+      if(needsMigration){
+        await mutateUser(session.id,data=>ensureAccountData(data));
+        user=await getUserById(session.id);
+      }
+      let rows=user.transactions||[];
+      const type=["income","expense"].includes(req.query.type)?req.query.type:null;
+      const month=/^\d{4}-\d{2}$/.test(req.query.month||"")?req.query.month:null;
+      const search=String(req.query.search||"").trim().toLowerCase().slice(0,60);
+      rows=rows.filter(row=>(!type||row.type===type)&&(!month||String(row.date).startsWith(month))&&
+        (!search||String((row.category||"")+" "+(row.note||"")+" "+(row.accountName||"")).toLowerCase().includes(search)));
+      rows.sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.createdAt||"").localeCompare(String(a.createdAt||"")));
+      return res.status(200).json({transactions:rows.slice(0,500)});
+    }
+    if(req.method==="POST"||req.method==="PATCH"){
+      const body=req.body||{},type=body.type,amount=Number(body.amount);
+      const category=String(body.category||"").trim(),note=String(body.note||"").trim().slice(0,160),date=body.date;
+      if(!["income","expense"].includes(type)||!Number.isFinite(amount)||amount<=0||amount>999999999999999||
+        !category||category.length>60||!validDate(date)){
+        return res.status(400).json({error:"Data transaksi tidak valid."});
+      }
+      const id=req.method==="PATCH"?String(body.id||""):randomUUID();
+      let saved=null,problem=null;
+      const user=await mutateUser(session.id,data=>{
+        saved=null;problem=null;
+        ensureAccountData(data);
+        data.transactions=Array.isArray(data.transactions)?data.transactions:[];
+        const account=activeAccount(data,String(body.accountId||""))||
+          (!body.accountId?data.accounts.find(item=>!item.archivedAt):null);
+        if(!account){problem="Pilih sumber dana yang masih aktif.";return data;}
+        const item={id,type,amount,category,note,date,accountId:account.id,
+          accountName:account.name,accountProvider:account.provider,
+          createdAt:new Date().toISOString()};
+        if(req.method==="PATCH"){
+          const index=data.transactions.findIndex(row=>row.id===id);
+          if(index>=0){
+            const existing=data.transactions[index];
+            if(["transfer_in","transfer_out"].includes(existing.type)){
+              problem="Transfer harus dikelola sebagai satu pasangan transaksi.";
+              return data;
+            }
+            item.createdAt=existing.createdAt||item.createdAt;
+            if(existing.recurringId)item.recurringId=existing.recurringId;
+            data.transactions[index]=item;
+            saved=item;
+          }
+        }else{
+          data.transactions.unshift(item);
+          saved=item;
+        }
+        return data;
+      });
+      if(!user)return res.status(404).json({error:"Akun tidak ditemukan."});
+      if(problem)return res.status(400).json({error:problem});
+      if(!saved)return res.status(404).json({error:"Transaksi tidak ditemukan."});
+      return res.status(req.method==="POST"?201:200).json({transaction:saved});
+    }
+    if(req.method==="DELETE"){
+      const id=String(req.query.id||"");
+      if(!id)return res.status(400).json({error:"Transaksi tidak valid."});
+      let removed=false;
+      const user=await mutateUser(session.id,data=>{
+        removed=false;
+        const target=(data.transactions||[]).find(row=>row.id===id);
+        if(!target)return data;
+        const originalLength=(data.transactions||[]).length;
+        if(target.transferId)data.transactions=data.transactions.filter(row=>row.transferId!==target.transferId);
+        else data.transactions=data.transactions.filter(row=>row.id!==id);
+        removed=originalLength!==data.transactions.length;
+        return data;
+      });
+      if(!user)return res.status(404).json({error:"Akun tidak ditemukan."});
+      if(!removed)return res.status(404).json({error:"Transaksi tidak ditemukan."});
+      return res.status(200).json({ok:true});
+    }
+    return res.status(405).json({error:"Method not allowed."});
+  }catch(error){return handleError(res,error);}
+};
