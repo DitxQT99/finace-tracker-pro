@@ -8,12 +8,8 @@ module.exports=async function(req,res){
     if(req.method==="GET"){
       let user=await getUserById(session.id);
       if(!user)return res.status(401).json({error:"Akun tidak ditemukan."});
-      const needsMigration=!Array.isArray(user.accounts)||!user.accounts.length||
-        (user.transactions||[]).some(row=>!row.accountId&&!["transfer_in","transfer_out"].includes(row.type));
-      if(needsMigration){
-        await mutateUser(session.id,data=>ensureAccountData(data));
-        user=await getUserById(session.id);
-      }
+      // Normalize legacy records in memory only. GET requests must never write user data.
+      ensureAccountData(user);
       let rows=user.transactions||[];
       const type=["income","expense"].includes(req.query.type)?req.query.type:null;
       const month=/^\d{4}-\d{2}$/.test(req.query.month||"")?req.query.month:null;
