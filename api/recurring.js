@@ -1,6 +1,7 @@
 const {randomUUID} = require("crypto");
 const {requireUser, mutateUser, getUserById, handleError, validDate} = require("../lib/core");
 const {applyDueRecurring} = require("../lib/recurring");
+const {ensureAccountData, activeAccount} = require("../lib/accounts");
 module.exports = async function(req, res) {
   res.setHeader("Cache-Control", "no-store");
   try {
@@ -14,24 +15,26 @@ module.exports = async function(req, res) {
     }
     if (req.method === "POST") {
       const body = req.body || {};
-      const type = body.type;
-      const amount = Number(body.amount);
+      const type = body.type, amount = Number(body.amount);
       const category = String(body.category || "").trim();
       const note = String(body.note || "").trim().slice(0, 120);
-      const frequency = body.frequency;
-      const startDate = body.startDate;
+      const frequency = body.frequency, startDate = body.startDate;
       if (!["income","expense"].includes(type) || !Number.isFinite(amount) || amount <= 0 ||
           amount > 999999999999999 || !category || category.length > 60 ||
           !["daily","weekly","monthly"].includes(frequency) || !validDate(startDate)) {
         return res.status(400).json({error:"Data transaksi rutin tidak valid."});
       }
-      let saved = null;
+      let saved = null, problem = null;
       const user = await mutateUser(session.id, data => {
-        saved = null;
+        saved = null; problem = null;
+        ensureAccountData(data);
         data.recurring = Array.isArray(data.recurring) ? data.recurring : [];
         if (data.recurring.length >= 50) return data;
+        const account = activeAccount(data,String(body.accountId || "")) ||
+          (!body.accountId ? data.accounts.find(item => !item.archivedAt) : null);
+        if (!account) { problem = "Pilih sumber dana yang masih aktif."; return data; }
         saved = {
-          id: randomUUID(), type, amount, category, note, frequency,
+          id: randomUUID(), type, amount, category, note, frequency, accountId:account.id,
           startDate, nextDate: startDate, anchorDay: Number(startDate.slice(-2)), active: true,
           createdAt: new Date().toISOString()
         };
@@ -39,12 +42,12 @@ module.exports = async function(req, res) {
         return data;
       });
       if (!user) return res.status(404).json({error:"Akun tidak ditemukan."});
+      if (problem) return res.status(400).json({error:problem});
       if (!saved) return res.status(400).json({error:"Maksimal 50 aturan transaksi rutin."});
       return res.status(201).json({recurring:saved});
     }
     if (req.method === "PATCH") {
-      const body = req.body || {};
-      const id = String(body.id || "");
+      const body = req.body || {}, id = String(body.id || "");
       if (!id || typeof body.active !== "boolean") return res.status(400).json({error:"Perubahan aturan tidak valid."});
       let saved = null;
       const user = await mutateUser(session.id, data => {
