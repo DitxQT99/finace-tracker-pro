@@ -206,6 +206,7 @@
   }
 
   ensureModals();
+  $("#currencySelect")?.addEventListener("change",renderAccounts);
   $("#addAccountBtn")?.addEventListener("click",()=>openAccountModal());
   $("#openTransferBtn")?.addEventListener("click",openTransferModal);
   document.addEventListener("click",async event=>{
