@@ -1,5 +1,5 @@
 const {requireUser,getUserById,handleError}=require("../lib/core");
-const {accountBalance}=require("../lib/accounts");
+const {accountBalance,ensureAccountData}=require("../lib/accounts");
 function monthKey(date) {
   const parts = new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit"}).formatToParts(date);
   return parts.find(x=>x.type==="year").value+"-"+parts.find(x=>x.type==="month").value;
@@ -10,6 +10,7 @@ module.exports=async function(req,res){
   try {
     const session=requireUser(req,res);if(!session)return;
     const user=await getUserById(session.id);if(!user)return res.status(401).json({error:"Akun tidak ditemukan."});
+    ensureAccountData(user); // legacy transaction compatibility, read-only
     const transactions=user.transactions||[];
     const sum=(rows,type)=>rows.filter(row=>row.type===type).reduce((total,row)=>total+Number(row.amount||0),0);
     const now=new Date(),currentMonth=monthKey(now);
