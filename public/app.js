@@ -4,12 +4,13 @@
   const $ = (selector, root=document) => root.querySelector(selector);
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
   const state = {
-    user: null, analytics: null, transactions: [], budgets: [], goals: [],
+    user: null, analytics: null, transactions: [], accounts: [], budgets: [], goals: [],
     view: "overview", authMode: "login", hideBalances: false,
     theme: localStorage.getItem("grey-theme") || "dark",
     currency: localStorage.getItem("grey-currency") || "IDR",
     chartRange: 6
   };
+  window.greyFinanceState = state;
   const currencyMeta = { IDR: { locale:"id-ID", symbol:"Rp" }, USD:{ locale:"en-US", symbol:"$" }, SGD:{ locale:"en-SG", symbol:"S$" } };
 
   function money(value) {
@@ -126,7 +127,7 @@
     $("#authScreen").classList.remove("hidden");
     setAuthMode("login");
   }
-  const titleMap = { overview:"Overview", transactions:"Transactions", budgets:"Budgets", goals:"Saving goals", reports:"Reports", settings:"Settings" };
+  const titleMap = { overview:"Overview", transactions:"Transactions", accounts:"Accounts", budgets:"Budgets", goals:"Saving goals", reports:"Reports", settings:"Settings" };
   function showView(view) {
     if (!titleMap[view]) return;
     state.view = view;
@@ -137,6 +138,7 @@
     if (view === "transactions") renderTransactions();
     if (view === "budgets" || view === "goals") renderPlans();
     if (view === "reports") renderReport();
+    document.dispatchEvent(new CustomEvent("greyfinance:view",{detail:{view}}));
   }
   function changeAmount(element, value) {
     if (!element) return;
@@ -209,16 +211,17 @@
   };
   function renderRecent() {
     const list = $("#recentTransactions");
-    const rows = state.transactions.slice(0,5);
+    const rows = state.transactions.filter(row=>row.type!=="transfer_in").slice(0,5);
     if (!rows.length) { list.innerHTML='<div class="empty-mini">No transactions yet. Add your first one.</div>'; return; }
-    list.innerHTML = rows.map(row => '<div class="recent-item"><div class="category-icon">'+categoryGlyph(row.category)+'</div><div class="recent-copy"><b>'+escapeHTML(row.category)+'</b><small>'+escapeHTML(row.note || row.type)+' · '+shortDate(row.date)+'</small></div><div class="recent-amount '+row.type+' money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+(row.type==="income"?"+":"−")+money(row.amount)+'</div></div>').join("");
+    list.innerHTML = rows.map(row => '<div class="recent-item"><div class="category-icon">'+(row.type==="transfer_out"?"⇄":categoryGlyph(row.category))+'</div><div class="recent-copy"><b>'+escapeHTML(row.type==="transfer_out"?"Transfer":row.category)+'</b><small>'+escapeHTML(row.note || row.type)+(row.accountName?" · "+escapeHTML(row.accountName):"")+' · '+shortDate(row.date)+'</small></div><div class="recent-amount '+(row.type==="transfer_out"?"transfer":row.type)+' money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+(row.type==="income"?"+":row.type==="transfer_out"?"⇄":"−")+money(row.amount)+'</div></div>').join("");
   }
   function filteredTransactions() {
     const search = ($("#transactionSearch")?.value || "").trim().toLowerCase();
     const type = $("#transactionTypeFilter")?.value || "all";
     const month = $("#transactionMonthFilter")?.value || "";
     return state.transactions.filter(row => {
-      const haystack = (row.category+" "+(row.note||"")).toLowerCase();
+      if(row.type==="transfer_in") return false;
+      const haystack = (row.category+" "+(row.note||"")+" "+(row.accountName||"")).toLowerCase();
       return (!search || haystack.includes(search)) && (type==="all" || row.type===type) && (!month || String(row.date).startsWith(month));
     });
   }
@@ -231,7 +234,14 @@
       body.innerHTML='<tr><td colspan="6" class="table-empty">No transactions match your filters.</td></tr>';
       return;
     }
-    body.innerHTML = rows.map(row => '<tr><td><span class="recent-copy"><b>'+escapeHTML(row.note || row.category)+'</b><small>'+escapeHTML(row.id.slice(0,8).toUpperCase())+'</small></span></td><td>'+shortDate(row.date)+'</td><td>'+escapeHTML(row.category)+'</td><td><span class="type-chip '+row.type+'">'+(row.type==="income"?"INCOME":"EXPENSE")+'</span></td><td class="align-right amount-cell '+row.type+' money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+(row.type==="income"?"+":"−")+money(row.amount)+'</td><td><div class="row-actions"><button type="button" title="Edit" aria-label="Edit transaction" data-edit-transaction="'+escapeHTML(row.id)+'">✎</button><button type="button" title="Delete" aria-label="Delete transaction" data-delete-transaction="'+escapeHTML(row.id)+'">×</button></div></td></tr>').join("");
+    body.innerHTML = rows.map(row => {
+      const transfer=row.type==="transfer_out";
+      const label=transfer?"TRANSFER":row.type==="income"?"INCOME":"EXPENSE";
+      const prefix=row.type==="income"?"+":transfer?"⇄":"−";
+      const amountClass=transfer?"transfer":row.type;
+      const detail=transfer?"To "+(row.counterpartyName||"another account"):(row.accountName||"");
+      return '<tr><td><span class="recent-copy"><b>'+escapeHTML(row.note || (transfer?"Transfer":row.category))+'</b><small>'+escapeHTML(row.id.slice(0,8).toUpperCase())+'</small></span></td><td>'+shortDate(row.date)+'</td><td><span>'+escapeHTML(row.category)+'</span><small class="transaction-source-label">'+escapeHTML(detail)+'</small></td><td><span class="type-chip '+amountClass+'">'+label+'</span></td><td class="align-right amount-cell '+amountClass+' money-display'+(state.hideBalances?' privacy-hidden':'')+'">'+prefix+money(row.amount)+'</td><td><div class="row-actions">'+(transfer?'':'<button type="button" title="Edit" aria-label="Edit transaction" data-edit-transaction="'+escapeHTML(row.id)+'">✎</button>')+'<button type="button" title="Delete" aria-label="Delete transaction" data-delete-transaction="'+escapeHTML(row.id)+'">×</button></div></td></tr>';
+    }).join("");
   }
   function renderPlans() {
     const totalBudget = state.budgets.reduce((sum,row)=>sum+Number(row.limit_amount||0),0);
@@ -297,8 +307,10 @@
   async function refreshAll() {
     try {
       const transactionResult=await api("/api/transactions");
+      const accountResult=await api("/api/accounts");
       const results=await Promise.all([api("/api/analytics"),api("/api/plans")]);
       state.transactions=transactionResult.transactions||[];
+      state.accounts=accountResult.accounts||[];
       state.analytics=results[0];
       state.budgets=results[1].budgets||[];
       state.goals=results[1].goals||[];
@@ -306,7 +318,7 @@
       renderTransactions();
       renderPlans();
       if(state.view==="reports") renderReport();
-      document.dispatchEvent(new Event("greyfinance:ready"));
+      document.dispatchEvent(new CustomEvent("greyfinance:ready",{detail:{accounts:state.accounts,transactions:state.transactions}}));
     } catch (error) { notify(error.message,"error"); }
   }
   window.greyFinanceRefresh = refreshAll;
@@ -322,6 +334,8 @@
     $("#transactionCategory").value=row ? row.category : "";
     $("#transactionDate").value=row ? row.date : new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
     $("#transactionNote").value=row ? row.note || "" : "";
+    $("#transactionAccountId").value=row?.accountId || state.accounts[0]?.id || "";
+    window.greyAccountsSetTransactionSource?.($("#transactionAccountId").value);
     window.greyFinanceSyncSelects?.();
     $("#transactionModal").classList.remove("hidden");
     $("#transactionAmount").focus();
@@ -377,7 +391,7 @@
     event.preventDefault();
     const id=$("#transactionId").value;
     const type=$('input[name="transactionType"]:checked').value;
-    const body={type,amount:Number($("#transactionAmount").value),category:$("#transactionCategory").value,date:$("#transactionDate").value,note:$("#transactionNote").value.trim()};
+    const body={type,amount:Number($("#transactionAmount").value),category:$("#transactionCategory").value,date:$("#transactionDate").value,note:$("#transactionNote").value.trim(),accountId:$("#transactionAccountId").value};
     if(!body.category){notify("Pilih kategori transaksi terlebih dahulu.","error");window.greyFinanceSyncSelects?.();return;}
     try {
       await api("/api/transactions",{method:id?"PATCH":"POST",body:id?{...body,id}:body});
@@ -459,7 +473,7 @@
   async function logout() {
     try { await api("/api/auth",{method:"POST",body:{action:"logout"}}); }
     catch(error) { /* Clear the local view even if the network is unavailable. */ }
-    state.user=null;state.transactions=[];state.analytics=null;state.budgets=[];state.goals=[];
+    state.user=null;state.transactions=[];state.accounts=[];state.analytics=null;state.budgets=[];state.goals=[];
     showAuth();notify("Kamu sudah keluar.");
   }
   $("#logoutBtn").addEventListener("click",logout);
