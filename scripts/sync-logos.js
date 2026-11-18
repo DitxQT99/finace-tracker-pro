@@ -33,7 +33,7 @@ async function downloadLogo(entry) {
         throw new Error("Logo request failed (" + response.status + ")");
       }
       const svg = await response.text();
-      if (!/^\\s*<svg[\\s>]/i.test(svg) || !svg.includes("</svg>")) {
+      if (!svg.trimStart().startsWith("<svg") || !svg.includes("</svg>")) {
         throw new Error("Invalid SVG response");
       }
       await fs.writeFile(destination, svg, "utf8");
