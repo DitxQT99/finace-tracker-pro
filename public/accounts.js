@@ -4,7 +4,7 @@
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
   const BANKS = [{"slug":"aladin","name":"Aladin"},{"slug":"allo","name":"Allo"},{"slug":"amar-bank","name":"Amar Bank"},{"slug":"anz","name":"ANZ"},{"slug":"bangkok-bank","name":"Bangkok Bank"},{"slug":"bank-artha-graha-internasional","name":"Bank Artha Graha Internasional"},{"slug":"bank-bengkulu","name":"Bank Bengkulu"},{"slug":"bank-bjb","name":"Bank BJB"},{"slug":"bank-bjb-syariah","name":"Bank BJB Syariah"},{"slug":"bank-bpd-aceh","name":"Bank BPD Aceh"},{"slug":"bank-bpd-bali","name":"Bank BPD Bali"},{"slug":"bank-bpd-banten","name":"Bank BPD Banten"},{"slug":"bank-bpd-diy","name":"Bank BPD DIY"},{"slug":"bank-bpd-jambi","name":"Bank BPD Jambi"},{"slug":"bank-bpd-jateng","name":"Bank BPD Jateng"},{"slug":"bank-bpd-jatim","name":"Bank BPD Jatim"},{"slug":"bank-bpd-kalbar","name":"Bank BPD Kalbar"},{"slug":"bank-bpd-kalimantan-timur","name":"Bank BPD Kalimantan Timur"},{"slug":"bank-bpd-kalsel","name":"Bank BPD Kalsel"},{"slug":"bank-bpd-lampung","name":"Bank BPD Lampung"},{"slug":"bank-bpd-maluku-malut","name":"Bank BPD Maluku Malut"},{"slug":"bank-bpd-ntb-syariah","name":"Bank BPD NTB Syariah"},{"slug":"bank-bpd-ntt","name":"Bank BPD NTT"},{"slug":"bank-bpd-papua","name":"Bank BPD Papua"},{"slug":"bank-bpd-riau-kepri","name":"Bank BPD Riau Kepri"},{"slug":"bank-bpd-riau-kepri-syariah","name":"Bank BPD Riau Kepri Syariah"},{"slug":"bank-bpd-sulselbar","name":"Bank BPD Sulselbar"},{"slug":"bank-bpd-sulteng","name":"Bank BPD Sulteng"},{"slug":"bank-bpd-sultra","name":"Bank BPD Sultra"},{"slug":"bank-bpd-sulutgo","name":"Bank BPD Sulutgo"},{"slug":"bank-bpd-sumsel-babel","name":"Bank BPD Sumsel Babel"},{"slug":"bank-bpd-sumut","name":"Bank BPD Sumut"},{"slug":"bank-bumi-artha","name":"Bank Bumi Artha"},{"slug":"bank-capital","name":"Bank Capital"},{"slug":"bank-ganesha","name":"Bank Ganesha"},{"slug":"bank-ina","name":"Bank INA"},{"slug":"bank-index-selindo","name":"Bank Index Selindo"},{"slug":"bank-jakarta","name":"Bank Jakarta"},{"slug":"bank-jasa-jakarta","name":"Bank Jasa Jakarta"},{"slug":"bank-lampung","name":"Bank Lampung"},{"slug":"bank-mas","name":"Bank Mas"},{"slug":"bank-maspion","name":"Bank Maspion"},{"slug":"bank-mayapada","name":"Bank Mayapada"},{"slug":"bank-mayora","name":"Bank Mayora"},{"slug":"bank-mestika-dharma","name":"Bank Mestika Dharma"},{"slug":"bank-nagari","name":"Bank Nagari"},{"slug":"bank-of-america","name":"Bank of America"},{"slug":"bank-of-china","name":"Bank of China"},{"slug":"bank-of-india","name":"Bank of India"},{"slug":"bank-of-india-indonesia","name":"Bank of India Indonesia"},{"slug":"bank-raya","name":"Bank Raya"},{"slug":"bank-resona-perdania","name":"Bank Resona Perdania"},{"slug":"bank-sahabat-sampoerna","name":"Bank Sahabat Sampoerna"},{"slug":"bank-saqu","name":"Bank Saqu"},{"slug":"bank-smbc-indonesia","name":"Bank SMBC Indonesia"},{"slug":"bank-victoria","name":"Bank Victoria"},{"slug":"bank-victoria-syariah","name":"Bank Victoria Syariah"},{"slug":"bank-woori-saudara","name":"Bank Woori Saudara"},{"slug":"bca","name":"BCA"},{"slug":"bca-digital","name":"BCA Digital"},{"slug":"bca-syariah","name":"BCA Syariah"},{"slug":"blu-bca","name":"blu by BCA Digital"},{"slug":"bnc","name":"BNC"},{"slug":"bni","name":"BNI"},{"slug":"bnp-paribas","name":"BNP Paribas"},{"slug":"bri","name":"BRI"},{"slug":"bri-vertical","name":"BRI (Vertical)"},{"slug":"bsi","name":"BSI"},{"slug":"bsn","name":"BSN"},{"slug":"btn","name":"BTN"},{"slug":"btn-syariah","name":"BTN Syariah"},{"slug":"btpn","name":"BTPN"},{"slug":"btpn-syariah","name":"BTPN Syariah"},{"slug":"ccb-indonesia","name":"CCB Indonesia"},{"slug":"cimb-niaga","name":"CIMB Niaga"},{"slug":"cimb-niaga-syariah","name":"CIMB Niaga Syariah"},{"slug":"citibank","name":"Citibank"},{"slug":"credit-suisse","name":"Credit Suisse"},{"slug":"ctbc-bank","name":"CTBC Bank"},{"slug":"danamon","name":"Danamon"},{"slug":"danamon-mufg","name":"Danamon (MUFG)"},{"slug":"danamon-syariah","name":"Danamon Syariah"},{"slug":"dbs","name":"DBS"},{"slug":"deutsche-bank","name":"Deutsche Bank"},{"slug":"hibank","name":"hibank"},{"slug":"hsbc","name":"HSBC"},{"slug":"ibk-bank","name":"IBK Bank"},{"slug":"icbc","name":"ICBC"},{"slug":"ing-bank","name":"ING Bank"},{"slug":"j-trust-bank","name":"J Trust Bank"},{"slug":"jago","name":"Jago"},{"slug":"jenius","name":"Jenius"},{"slug":"jp-morgan-chase","name":"JP Morgan Chase"},{"slug":"kb-bukopin","name":"KB Bukopin"},{"slug":"kb-bukopin-syariah","name":"KB Bukopin Syariah"},{"slug":"keb-hana-bank","name":"KEB Hana Bank"},{"slug":"krom","name":"Krom"},{"slug":"line-bank","name":"LINE Bank"},{"slug":"mandiri","name":"Mandiri"},{"slug":"mandiri-taspen","name":"Mandiri Taspen"},{"slug":"maybank","name":"Maybank"},{"slug":"mega","name":"Mega"},{"slug":"mega-syariah","name":"Mega Syariah"},{"slug":"mizuho-bank","name":"Mizuho Bank"},{"slug":"mnc","name":"MNC"},{"slug":"mnc-bank","name":"MNC Bank"},{"slug":"motion-banking","name":"Motion Banking"},{"slug":"muamalat","name":"Bank Muamalat"},{"slug":"mufg","name":"MUFG"},{"slug":"nanobank-syariah","name":"Nanobank Syariah"},{"slug":"nobu","name":"NOBU"},{"slug":"ocbc-nisp","name":"OCBC NISP"},{"slug":"ok-bank","name":"OK Bank"},{"slug":"panin-dubai-syariah","name":"Panin Dubai Syariah"},{"slug":"paninbank","name":"PaninBank"},{"slug":"permata","name":"Permata Bank"},{"slug":"prima-bank","name":"PRIMA Bank"},{"slug":"qnb","name":"QNB"},{"slug":"sbi-indonesia","name":"SBI Indonesia"},{"slug":"seabank","name":"SeaBank"},{"slug":"shinhan-bank","name":"Shinhan Bank"},{"slug":"sinarmas","name":"Sinarmas"},{"slug":"sinarmas-syariah","name":"Sinarmas Syariah"},{"slug":"standard-chartered","name":"Standard Chartered"},{"slug":"superbank","name":"Superbank"},{"slug":"uob","name":"UOB"},{"slug":"welab-bank","name":"Welab Bank"}];
   const WALLETS = [{"slug":"astra-pay","name":"Astra Pay"},{"slug":"bluepay","name":"Bluepay"},{"slug":"dana","name":"DANA"},{"slug":"dipay","name":"Dipay"},{"slug":"doku","name":"DOKU"},{"slug":"dutamoney","name":"Dutamoney"},{"slug":"gopay","name":"GoPay"},{"slug":"i-saku","name":"i.saku"},{"slug":"jakone-pay","name":"JakOne Pay"},{"slug":"kaspro","name":"Kaspro"},{"slug":"linkaja","name":"LinkAja"},{"slug":"motion-pay","name":"Motion Pay"},{"slug":"netzme","name":"Netzme"},{"slug":"otto-pay","name":"OTTO Pay"},{"slug":"ovo","name":"OVO"},{"slug":"paydia","name":"Paydia"},{"slug":"paytren","name":"Paytren"},{"slug":"pospay","name":"Pospay"},{"slug":"shopee-pay","name":"Shopee Pay"},{"slug":"speedcash","name":"SpeedCash"},{"slug":"truemoney","name":"TrueMoney"},{"slug":"uangku","name":"Uangku"},{"slug":"yukk","name":"Yukk"}];
-  const LOGO_BASE = "https://cdn.jsdelivr.net/npm/idn-finlogos@2.5.2/dist/icons/";
+  const LOGO_BASE = "https://cdn.jsdelivr.net/npm/idn-finlogos@2/dist/icons/";
   const currency = () => $("#currencySelect")?.value || "IDR";
   const money = value => new Intl.NumberFormat("id-ID",{style:"currency",currency:currency(),maximumFractionDigits:0}).format(Number(value||0));
   const state = () => window.greyFinanceState || {};
@@ -14,7 +14,10 @@
   const logoUrl = provider => provider && provider !== "cash" ? LOGO_BASE + encodeURIComponent(provider) + ".svg" : "";
   function logo(provider, type, size=28) {
     if(type === "cash" || provider === "cash") return '<span class="account-logo cash-logo" style="--logo-size:'+size+'px" aria-label="Cash">▤</span>';
-    return '<span class="account-logo" style="--logo-size:'+size+'px"><img src="'+logoUrl(provider)+'" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'logo-fallback\');this.remove()"></span>';
+    const folder=type==="ewallet"?"Ewallet":"Bank";
+    const fallback=String(provider||"").split("-").filter(Boolean).slice(0,2).map(part=>part.charAt(0)).join("").toUpperCase()||"•";
+    const fallbackUrl="/image/"+folder+"/default.svg";
+    return '<span class="account-logo" style="--logo-size:'+size+'px" data-fallback="'+esc(fallback)+'"><img src="'+logoUrl(provider)+'" data-fallback-src="'+fallbackUrl+'" alt="" loading="lazy" decoding="async" onerror="if(this.dataset.fallbackSrc){this.src=this.dataset.fallbackSrc;this.dataset.fallbackSrc=\'\';}else{this.parentElement.classList.add(\'logo-fallback\');this.parentElement.textContent=this.parentElement.dataset.fallback||\'•\';}"></span>';
   }
   function notify(message, error=false) {
     const region=$("#toastRegion"); if(!region)return;
@@ -22,10 +25,24 @@
     setTimeout(()=>toast.remove(),3600);
   }
   async function api(path, options={}) {
-    const response=await fetch(path,{method:options.method||"GET",credentials:"same-origin",headers:options.body?{"Content-Type":"application/json"}:{},body:options.body?JSON.stringify(options.body):undefined});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(data.error||"Permintaan tidak berhasil.");
-    return data;
+    const retryLimit=Math.max(0,Math.min(2,Number(options.retries)||0));
+    let attempt=0;
+    while(true){
+      try{
+        const response=await fetch(path,{method:options.method||"GET",credentials:"same-origin",headers:options.body?{"Content-Type":"application/json"}:{},body:options.body?JSON.stringify(options.body):undefined});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok){
+          const error=new Error(data.error||"Permintaan tidak berhasil.");
+          if(attempt<retryLimit&&response.status>=500){attempt++;await new Promise(resolve=>setTimeout(resolve,350*attempt));continue;}
+          throw error;
+        }
+        return data;
+      }catch(error){
+        const networkError=error instanceof TypeError||/network|fetch failed|load failed/i.test(String(error.message||""));
+        if(attempt<retryLimit&&networkError){attempt++;await new Promise(resolve=>setTimeout(resolve,350*attempt));continue;}
+        throw error;
+      }
+    }
   }
   function dateToday() {
     const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
@@ -79,14 +96,23 @@
   function ensureModals() {
     if($("#accountModal"))return;
     const wrap=document.createElement("div");wrap.innerHTML=
-      '<div id="accountModal" class="modal-backdrop hidden account-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle"><div class="modal-card account-modal-card"><div class="modal-head"><div><span class="eyebrow">YOUR MONEY, YOUR SPACE</span><h2 id="accountModalTitle">Add account</h2></div><button class="icon-button" type="button" data-close-account-modal aria-label="Close">×</button></div><form id="accountForm" class="modal-form"><input id="accountEditId" type="hidden"><div class="account-kind-tabs"><button type="button" data-kind="cash">▤ Cash</button><button type="button" data-kind="ewallet">◉ E-Wallet</button><button type="button" data-kind="bank">▣ Bank</button></div><div id="providerStep" class="provider-step"><div class="provider-search-wrap"><input id="providerSearch" type="search" placeholder="Search bank or e-wallet..."><span>⌕</span></div><div id="providerGrid" class="provider-grid"></div></div><div id="selectedProvider" class="selected-provider hidden"></div><input id="accountType" type="hidden" value="cash"><input id="accountProvider" type="hidden" value="cash"><input id="accountProviderName" type="hidden" value="Cash"><label>Account name<input id="accountName" type="text" maxlength="60" placeholder="e.g. DANA utama / BCA payroll" required></label><label>Account number / phone <span class="optional">(optional)</span><input id="accountNumber" type="text" inputmode="numeric" maxlength="40" placeholder="Nomor rekening atau nomor HP"></label><label>Opening balance<div class="amount-input"><span>Rp</span><input id="accountOpeningBalance" type="number" min="0" step="1" value="0" required></div></label><p class="account-form-hint">Nomor rekening atau nomor e-wallet hanya disimpan di akun pribadimu. Tidak perlu diisi kalau tidak ingin.</p><div class="modal-actions"><button class="btn btn-ghost" type="button" data-close-account-modal>Cancel</button><button class="btn btn-primary" type="submit" id="saveAccountBtn">Save account</button></div></form></div></div>'+
+      '<div id="accountModal" class="modal-backdrop hidden account-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle"><div class="modal-card account-modal-card"><div class="modal-head"><div><span class="eyebrow">YOUR MONEY, YOUR SPACE</span><h2 id="accountModalTitle">Add account</h2></div><button class="icon-button" type="button" data-close-account-modal aria-label="Close">×</button></div><form id="accountForm" class="modal-form"><input id="accountEditId" type="hidden"><div class="account-kind-tabs"><button type="button" data-kind="cash">▤ Cash</button><button type="button" data-kind="ewallet">◉ E-Wallet</button><button type="button" data-kind="bank">▣ Bank</button></div><div id="providerStep" class="provider-step"><div class="provider-search-wrap"><input id="providerSearch" type="search" placeholder="Search bank or e-wallet..."><span>⌕</span></div><div id="providerGrid" class="provider-grid"></div></div><div id="selectedProvider" class="selected-provider hidden"></div><input id="accountType" type="hidden" value="cash"><input id="accountProvider" type="hidden" value="cash"><input id="accountProviderName" type="hidden" value="Cash"><label>Account name<input id="accountName" type="text" maxlength="60" placeholder="e.g. DANA utama / BCA payroll" required></label><label>Account number / phone <span class="optional">(optional)</span><input id="accountNumber" type="text" inputmode="numeric" maxlength="40" placeholder="Nomor rekening atau nomor HP"></label><label>Opening balance <span id="accountOpeningBalanceOptional" class="optional hidden">(optional)</span><div class="amount-input"><span>Rp</span><input id="accountOpeningBalance" type="number" min="0" step="1" value="0" placeholder="0"></div></label><p class="account-form-hint">Nomor rekening atau nomor e-wallet hanya disimpan di akun pribadimu. Tidak perlu diisi kalau tidak ingin.</p><div class="modal-actions"><button class="btn btn-ghost" type="button" data-close-account-modal>Cancel</button><button class="btn btn-primary" type="submit" id="saveAccountBtn">Save account</button></div></form></div></div>'+
       '<div id="accountPickerModal" class="modal-backdrop hidden account-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="accountPickerTitle"><div class="modal-card account-modal-card"><div class="modal-head"><div><span class="eyebrow">SELECT SOURCE</span><h2 id="accountPickerTitle">Choose account</h2><p id="accountPickerSub">Pilih sumber dana.</p></div><button class="icon-button" type="button" data-close-picker aria-label="Close">×</button></div><div class="provider-search-wrap"><input id="accountPickerSearch" type="search" placeholder="Search your accounts..."><span>⌕</span></div><div id="accountPickerList" class="account-picker-list"></div></div></div>'+
       '<div id="transferModal" class="modal-backdrop hidden account-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle"><div class="modal-card account-modal-card"><div class="modal-head"><div><span class="eyebrow">MOVE MONEY, NOT INCOME</span><h2 id="transferModalTitle">Transfer between accounts</h2><p>Perpindahan saldo tidak mengubah laporan pemasukan/pengeluaran.</p></div><button class="icon-button" type="button" data-close-transfer aria-label="Close">×</button></div><form id="transferForm" class="modal-form transfer-form"><div class="transfer-account-fields"><div><label>From</label><input id="transferFromId" type="hidden"><button class="account-choice-btn" type="button" id="transferFromChoice"><span id="transferFromChoiceContent">Choose source</span><span class="choice-chevron">⌄</span></button></div><div class="transfer-arrow">↓</div><div><label>To</label><input id="transferToId" type="hidden"><button class="account-choice-btn" type="button" id="transferToChoice"><span id="transferToChoiceContent">Choose destination</span><span class="choice-chevron">⌄</span></button></div></div><label>Amount<div class="amount-input"><span>Rp</span><input id="transferAmount" type="number" min="1" step="1" placeholder="0" required></div></label><div class="form-two"><label>Date<input id="transferDate" type="date" required></label><label>Note <span class="optional">(optional)</span><input id="transferNote" type="text" maxlength="160" placeholder="e.g. Top up DANA"></label></div><div class="modal-actions"><button class="btn btn-ghost" type="button" data-close-transfer>Cancel</button><button class="btn btn-primary" type="submit" id="saveTransferBtn">Transfer now</button></div></form></div></div>'+
       '<div id="accountHistoryModal" class="modal-backdrop hidden account-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="accountHistoryTitle"><div class="modal-card account-modal-card account-history-modal"><div class="modal-head"><div><span class="eyebrow">ACCOUNT LEDGER</span><h2 id="accountHistoryTitle">Account history</h2><p id="accountHistoryMeta"></p></div><button class="icon-button" type="button" data-close-history aria-label="Close">×</button></div><div id="accountHistoryList" class="account-history-list"></div></div></div>';
     while(wrap.firstChild)document.body.append(wrap.firstChild);
   }
   const accountModal=()=>$("#accountModal"),pickerModal=()=>$("#accountPickerModal"),transferModal=()=>$("#transferModal"),historyModal=()=>$("#accountHistoryModal");
-  let editingAccount=null,providerKind="cash",pickerTarget=null,providerChosen=null;
+  let editingAccount=null,providerKind="cash",pickerTarget=null,providerChosen=null,pendingAccountRequestId=null;
+  function createRequestId(){return window.crypto?.randomUUID?.()||("acct-"+Date.now()+"-"+Math.random().toString(36).slice(2,14));}
+  function syncOpeningBalanceField(){
+    const input=$("#accountOpeningBalance");if(!input)return;
+    const optional=providerKind==="ewallet";input.required=!optional;
+    $("#accountOpeningBalanceOptional")?.classList.toggle("hidden",!optional);
+    input.placeholder=optional?"Kosongkan jika belum tahu":"0";
+    if(optional&&!editingAccount&&input.value==="0")input.value="";
+    if(!optional&&!input.value)input.value="0";
+  }
   function providersFor(kind) { return kind==="bank"?BANKS:kind==="ewallet"?WALLETS:[]; }
   function drawProviders() {
     const list=providersFor(providerKind),query=($("#providerSearch")?.value||"").trim().toLowerCase();
@@ -104,6 +130,7 @@
     else $("#selectedProvider").innerHTML="";
     $("#accountName").value=kind==="cash"?"Cash":"";
     drawProviders();
+    syncOpeningBalanceField();
   }
   function chooseProvider(slug,name) {
     providerChosen={slug,name};$("#accountProvider").value=slug;$("#accountProviderName").value=name;
@@ -113,6 +140,7 @@
   }
   function openAccountModal(account=null,kind="cash") {
     ensureModals();editingAccount=account;
+    if(account)pendingAccountRequestId=null;else if(!pendingAccountRequestId)pendingAccountRequestId=createRequestId();
     $("#accountForm").reset();$("#accountEditId").value=account?.id||"";
     $("#accountModalTitle").textContent=account?"Edit account":"Add account";
     $("#saveAccountBtn").textContent=account?"Save changes":"Save account";
@@ -130,6 +158,7 @@
       setKind(kind);
       if(kind==="cash")$("#accountName").value="Cash";
     }
+    syncOpeningBalanceField();
     accountModal().classList.remove("hidden");
     if(!account && kind!=="cash")$("#providerSearch").value="";
     drawProviders();
@@ -260,10 +289,14 @@
     const id=$("#accountEditId").value;
     const type=$("#accountType").value,provider=$("#accountProvider").value,providerName=$("#accountProviderName").value;
     if(type!=="cash"&&!providerChosen){notify("Pilih bank atau e-wallet terlebih dahulu.",true);return;}
-    const body={type,provider,providerName,name:$("#accountName").value.trim(),accountNumber:$("#accountNumber").value.trim(),openingBalance:Number($("#accountOpeningBalance").value)};
+    const balanceValue=$("#accountOpeningBalance").value.trim();
+    const body={type,provider,providerName,name:$("#accountName").value.trim(),accountNumber:$("#accountNumber").value.trim()};
+    if(balanceValue!=="")body.openingBalance=Number(balanceValue);else if(!id)body.openingBalance=0;
+    if(!id)body.requestId=pendingAccountRequestId||(pendingAccountRequestId=createRequestId());
     const submit=$("#saveAccountBtn");submit.disabled=true;
     try{
-      await api("/api/accounts",{method:id?"PATCH":"POST",body:id?{...body,id}:body});
+      await api("/api/accounts",{method:id?"PATCH":"POST",body:id?{...body,id}:body,retries:id?0:1});
+      pendingAccountRequestId=null;
       closeAccountModal();await refreshApp();notify(id?"Account updated.":"Account added.");
     }catch(error){notify(error.message,true);}
     finally{submit.disabled=false;}

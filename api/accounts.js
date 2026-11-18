@@ -7,7 +7,8 @@ function number(value) {
   return Number.isFinite(amount) && amount >= 0 && amount <= 999999999999999 ? amount : null;
 }
 function accountPayload(account, transactions) {
-  return {...account, balance: accountBalance(account, transactions), transactionCount: transactions.filter(row => row.accountId === account.id).length};
+  const {clientRequestId, ...safeAccount} = account;
+  return {...safeAccount, balance: accountBalance(account, transactions), transactionCount: transactions.filter(row => row.accountId === account.id).length};
 }
 
 module.exports = async function(req, res) {
@@ -42,27 +43,52 @@ module.exports = async function(req, res) {
       const name = String(body.name || providerName || "Cash").trim().slice(0,60);
       const accountNumber = String(body.accountNumber || "").trim().slice(0,40);
       const openingBalance = number(body.openingBalance ?? 0);
+      const requestId = String(body.requestId || "").trim();
       if (!["cash","ewallet","bank"].includes(type) ||
           (type !== "cash" && (!/^[a-z0-9-]{1,60}$/.test(provider) || providerName.length < 2)) ||
-          name.length < 2 || openingBalance === null) {
+          name.length < 2 || openingBalance === null ||
+          (requestId && !/^[A-Za-z0-9_-]{8,80}$/.test(requestId))) {
         return res.status(400).json({error:"Data akun tidak valid."});
       }
       const id = randomUUID();
-      let saved = null, problem = null;
-      const user = await mutateUser(session.id, data => {
-        saved = null; problem = null;
-        ensureAccountData(data);
-        if (data.accounts.filter(account => !account.archivedAt).length >= 100) {
-          problem = "Maksimal 100 akun aktif.";
+      let saved = null, problem = null, alreadySaved = false, user;
+      try {
+        user = await mutateUser(session.id, data => {
+          saved = null; problem = null; alreadySaved = false;
+          ensureAccountData(data);
+          if (requestId) {
+            const prior = data.accounts.find(account => account.clientRequestId === requestId);
+            if (prior) {
+              saved = prior;
+              alreadySaved = true;
+              return data;
+            }
+          }
+          if (data.accounts.filter(account => !account.archivedAt).length >= 100) {
+            problem = "Maksimal 100 akun aktif.";
+            return data;
+          }
+          saved = {id,type,provider,providerName,name,accountNumber,openingBalance,createdAt:new Date().toISOString()};
+          if (requestId) saved.clientRequestId = requestId;
+          data.accounts.unshift(saved);
           return data;
-        }
-        saved = {id,type,provider,providerName,name,accountNumber,openingBalance,createdAt:new Date().toISOString()};
-        data.accounts.unshift(saved);
-        return data;
-      });
+        });
+      } catch (error) {
+        // A storage timeout can happen after the write has committed. Check the idempotency
+        // key before reporting failure so a retry never creates a duplicate account.
+        if (!requestId) throw error;
+        let latest;
+        try { latest = await getUserById(session.id); }
+        catch { throw error; }
+        const prior = (latest?.accounts || []).find(account => account.clientRequestId === requestId);
+        if (!prior) throw error;
+        user = latest;
+        saved = prior;
+        alreadySaved = true;
+      }
       if (!user) return res.status(404).json({error:"Akun tidak ditemukan."});
       if (problem) return res.status(400).json({error:problem});
-      return res.status(201).json({account:accountPayload(saved,user.transactions || [])});
+      return res.status(alreadySaved ? 200 : 201).json({account:accountPayload(saved,user.transactions || [])});
     }
 
     if (req.method === "PATCH") {
@@ -129,6 +155,10 @@ module.exports = async function(req, res) {
     }
     return res.status(405).json({error:"Method not allowed."});
   } catch (error) {
+    console.error("Grey Finance accounts API failure:", {name:error?.name,code:error?.code,statusCode:error?.statusCode,message:error?.message});
+    if (error?.statusCode === 429 || error?.statusCode >= 500 || ["ETIMEDOUT","ECONNRESET","UND_ERR_CONNECT_TIMEOUT"].includes(error?.code)) {
+      return res.status(503).json({error:"Penyimpanan sedang sibuk. Coba simpan ulang; permintaan akun ini aman diulang.",code:"STORAGE_TEMPORARY"});
+    }
     return handleError(res,error);
   }
 };
