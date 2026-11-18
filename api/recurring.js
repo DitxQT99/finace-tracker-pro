@@ -8,7 +8,7 @@ module.exports = async function(req, res) {
     const session = requireUser(req, res);
     if (!session) return;
     if (req.method === "GET") {
-      await applyDueRecurring(session.id);
+      // Keep GET read-only; scheduled writes must not block dashboard interactions.
       const user = await getUserById(session.id);
       if (!user) return res.status(401).json({error:"Akun tidak ditemukan."});
       return res.status(200).json({recurring:user.recurring || []});
