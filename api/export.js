@@ -15,13 +15,14 @@ module.exports = async function(req, res) {
     const type = ["income","expense"].includes(req.query.type) ? req.query.type : "";
     const search = String(req.query.search || "").trim().toLowerCase().slice(0,60);
     const rows = (user.transactions || []).filter(row =>
+      row.type !== "transfer_in" &&
       (!month || String(row.date).startsWith(month)) &&
       (!type || row.type === type) &&
-      (!search || String(row.category + " " + (row.note || "")).toLowerCase().includes(search))
+      (!search || String(row.category + " " + (row.note || "") + " " + (row.accountName || "")).toLowerCase().includes(search))
     ).sort((a,b) => String(b.date).localeCompare(String(a.date)));
-    const headers = ["Date","Type","Category","Amount","Note"];
+    const headers = ["Date","Type","Source account","Category","Amount","Note"];
     const cells = values => "<Row>" + values.map((value,index) => {
-      const numeric = index === 3 && Number.isFinite(Number(value));
+      const numeric = index === 4 && Number.isFinite(Number(value));
       return '<Cell><Data ss:Type="' + (numeric ? "Number" : "String") + '">' + xml(value) + "</Data></Cell>";
     }).join("") + "</Row>";
     const sheet = '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -31,7 +32,7 @@ module.exports = async function(req, res) {
       'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
       'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
       '<Worksheet ss:Name="Transactions"><Table>' + cells(headers) +
-      rows.map(row => cells([row.date,row.type,row.category,Number(row.amount || 0),row.note || ""])).join("") +
+      rows.map(row => cells([row.date,row.type.startsWith("transfer_")?"Transfer":row.type,row.accountName || "",row.category,Number(row.amount || 0),row.note || ""])).join("") +
       "</Table></Worksheet></Workbook>";
     res.setHeader("Content-Type","application/vnd.ms-excel; charset=utf-8");
     res.setHeader("Content-Disposition",'attachment; filename="grey-finance-transactions.xls"');
