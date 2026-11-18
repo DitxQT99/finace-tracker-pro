@@ -205,6 +205,7 @@
     if(sourceId)setTransactionSource(sourceId);
   }
 
+  ensureModals();
   $("#addAccountBtn")?.addEventListener("click",()=>openAccountModal());
   $("#openTransferBtn")?.addEventListener("click",openTransferModal);
   document.addEventListener("click",async event=>{
