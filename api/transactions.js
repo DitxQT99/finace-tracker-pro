@@ -1,5 +1,4 @@
 const{randomUUID}=require("crypto"),{requireUser,mutateUser,getUserById,handleError,validDate}=require("../lib/core");
-const{applyDueRecurring}=require("../lib/recurring");
 const{ensureAccountData,activeAccount}=require("../lib/accounts");
 module.exports=async function(req,res){
   res.setHeader("Cache-Control","no-store");
@@ -7,7 +6,6 @@ module.exports=async function(req,res){
   try{
     const session=requireUser(req,res);if(!session)return;
     if(req.method==="GET"){
-      await applyDueRecurring(session.id);
       let user=await getUserById(session.id);
       if(!user)return res.status(401).json({error:"Akun tidak ditemukan."});
       const needsMigration=!Array.isArray(user.accounts)||!user.accounts.length||
