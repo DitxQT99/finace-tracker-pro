@@ -11,13 +11,13 @@
   const accounts = () => state().accounts || [];
   const transactions = () => state().transactions || [];
   const isHidden = () => $("#privacyToggle")?.title === "Tampilkan saldo";
-  const logoUrl = provider => provider && provider !== "cash" ? LOGO_BASE + encodeURIComponent(provider) + ".svg" : "";
+  const logoUrl = (provider,type) => "/image/" + (type === "ewallet" ? "Ewallet" : "Bank") + "/" + encodeURIComponent(provider) + ".svg";
   function logo(provider, type, size=28) {
     if(type === "cash" || provider === "cash") return '<span class="account-logo cash-logo" style="--logo-size:'+size+'px" aria-label="Cash">▤</span>';
     const folder=type==="ewallet"?"Ewallet":"Bank";
     const fallback=String(provider||"").split("-").filter(Boolean).slice(0,2).map(part=>part.charAt(0)).join("").toUpperCase()||"•";
     const fallbackUrl="/image/"+folder+"/default.svg";
-    return '<span class="account-logo" style="--logo-size:'+size+'px" data-fallback="'+esc(fallback)+'"><img src="'+logoUrl(provider)+'" data-fallback-src="'+fallbackUrl+'" alt="" loading="lazy" decoding="async" onerror="if(this.dataset.fallbackSrc){this.src=this.dataset.fallbackSrc;this.dataset.fallbackSrc=\'\';}else{this.parentElement.classList.add(\'logo-fallback\');this.parentElement.textContent=this.parentElement.dataset.fallback||\'•\';}"></span>';
+    return '<span class="account-logo" style="--logo-size:'+size+'px" data-fallback="'+esc(fallback)+'"><img src="'+logoUrl(provider,type)+'" data-fallback-src="'+fallbackUrl+'" alt="" loading="lazy" decoding="async" onerror="if(this.dataset.fallbackSrc){this.src=this.dataset.fallbackSrc;this.dataset.fallbackSrc=\'\';}else{this.parentElement.classList.add(\'logo-fallback\');this.parentElement.textContent=this.parentElement.dataset.fallback||\'•\';}"></span>';
   }
   function notify(message, error=false) {
     const region=$("#toastRegion"); if(!region)return;
