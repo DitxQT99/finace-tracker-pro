@@ -1,6 +1,7 @@
 "use strict";
 const {randomUUID}=require("crypto");
 const {requireUser,mutateUser,getUserById,handleError,validDate}=require("../lib/core");
+const {ensureAccountData,activeAccount,accountBalance}=require("../lib/accounts");
 const MODEL=process.env.GROQ_MODEL||"openai/gpt-oss-120b";
 const CATEGORIES=["Food & Drinks","Transport","Shopping","Bills","Health","Entertainment","Salary","Freelance","Business","Education","Other"];
 const rateLimits=new Map();
@@ -11,12 +12,14 @@ function jakartaDate(){
   return part("year")+"-"+part("month")+"-"+part("day");
 }
 function financeContext(user){
+  ensureAccountData(user);
   const tx=Array.isArray(user.transactions)?user.transactions:[];
   const today=jakartaDate(),month=today.slice(0,7);
   const sum=(rows,type)=>rows.filter(x=>x.type===type).reduce((n,x)=>n+Number(x.amount||0),0);
   const current=tx.filter(x=>String(x.date||"").startsWith(month));
   return {
     currency:"IDR",today,
+    accounts:(user.accounts||[]).filter(account=>!account.archivedAt).map(account=>({id:account.id,name:account.name,type:account.type,provider:account.provider,balance:accountBalance(account,tx)})),
     allTime:{transactionCount:tx.length,income:sum(tx,"income"),expense:sum(tx,"expense"),net:sum(tx,"income")-sum(tx,"expense")},
     currentMonth:{month,income:sum(current,"income"),expense:sum(current,"expense"),net:sum(current,"income")-sum(current,"expense")},
     budgets:(user.budgets||[]).slice(0,30).map(x=>({category:x.category,limit:Number(x.limit_amount||0),month:x.month})),
@@ -54,7 +57,7 @@ async function askModel(user,message){
     "Kembalikan hanya JSON valid dengan bentuk {reply:string,draft:null atau object lengkap dengan type ('income'|'expense'),amount (number),category,note,date}. Jangan tambahkan markdown."
   ].join("\n");
   const history=(user.aiMessages||[]).slice(-12).filter(x=>x&&["user","assistant"].includes(x.role)&&typeof x.content==="string").map(x=>({role:x.role,content:x.content.slice(0,1200)}));
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),16000);
   let response,data;
   try{
     response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
@@ -175,6 +178,7 @@ module.exports=async function(req,res){
         result=null;problem=null;
         user.aiDrafts=Array.isArray(user.aiDrafts)?user.aiDrafts:[];
         user.transactions=Array.isArray(user.transactions)?user.transactions:[];
+        ensureAccountData(user);
         const draft=user.aiDrafts.find(x=>x.id===draftId);
         if(!draft){problem="Draft tidak ditemukan.";return user;}
         if(action==="approve"&&draft.status==="approved"){result={status:"approved",transactionId:draft.transactionId||draft.id};return user;}
@@ -182,7 +186,10 @@ module.exports=async function(req,res){
         if(draft.expiresAt&&Date.parse(draft.expiresAt)<Date.now()){draft.status="expired";problem="Draft sudah kedaluwarsa. Buat draft baru dari chat.";return user;}
         if(action==="reject"){draft.status="rejected";draft.rejectedAt=new Date().toISOString();result={status:"rejected"};return user;}
         if(!["income","expense"].includes(draft.type)||!Number.isSafeInteger(Number(draft.amount))||Number(draft.amount)<=0||!CATEGORIES.includes(draft.category)||!validDate(draft.date)){problem="Isi draft tidak valid. Buat draft baru.";return user;}
-        const transaction={id:draft.id,type:draft.type,amount:Number(draft.amount),category:draft.category,note:String(draft.note||"").slice(0,160),date:draft.date,createdAt:new Date().toISOString(),source:"grey-ai"};
+        const accountId=String(body.accountId||"");
+        const account=activeAccount(user,accountId)||(!accountId?user.accounts.find(item=>!item.archivedAt):null);
+        if(!account){problem="Pilih sumber dana aktif sebelum menyetujui transaksi.";return user;}
+        const transaction={id:draft.id,type:draft.type,amount:Number(draft.amount),category:draft.category,note:String(draft.note||"").slice(0,160),date:draft.date,accountId:account.id,accountName:account.name,accountProvider:account.provider,createdAt:new Date().toISOString(),source:"grey-ai"};
         if(!user.transactions.some(x=>x.id===transaction.id))user.transactions.unshift(transaction);
         draft.status="approved";draft.approvedAt=new Date().toISOString();draft.transactionId=transaction.id;
         result={status:"approved",transactionId:transaction.id,transaction};return user;
