@@ -322,7 +322,10 @@
     } catch (error) { notify(error.message,"error"); }
   }
   window.greyFinanceRefresh = refreshAll;
+  let pendingTransactionRequestId=null;
+  function createTransactionRequestId(){return window.crypto?.randomUUID?.()||("txn-"+Date.now()+"-"+Math.random().toString(36).slice(2,14));}
   function openTransaction(row=null) {
+    pendingTransactionRequestId=row?null:createTransactionRequestId();
     $("#transactionForm").reset();
     $("#transactionId").value=row ? row.id : "";
     $("#transactionModalTitle").textContent=row ? "Edit transaction" : "Add transaction";
@@ -389,14 +392,26 @@
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeModals();});
   $("#transactionForm").addEventListener("submit",async event=>{
     event.preventDefault();
+    const submit=$("#saveTransactionBtn");
+    if(submit.disabled)return;
     const id=$("#transactionId").value;
     const type=$('input[name="transactionType"]:checked').value;
     const body={type,amount:Number($("#transactionAmount").value),category:$("#transactionCategory").value,date:$("#transactionDate").value,note:$("#transactionNote").value.trim(),accountId:$("#transactionAccountId").value};
     if(!body.category){notify("Pilih kategori transaksi terlebih dahulu.","error");window.greyFinanceSyncSelects?.();return;}
+    if(!id)body.requestId=pendingTransactionRequestId||(pendingTransactionRequestId=createTransactionRequestId());
+    submit.disabled=true;
+    const previousLabel=submit.textContent;
+    submit.textContent="Menyimpan…";
     try {
       await api("/api/transactions",{method:id?"PATCH":"POST",body:id?{...body,id}:body});
+      pendingTransactionRequestId=null;
       closeModals(); await refreshAll(); notify(id?"Transaction updated.":"Transaction saved.");
-    } catch(error) { notify(error.message,"error"); }
+    } catch(error) {
+      notify(error.message,"error");
+    } finally {
+      submit.disabled=false;
+      submit.textContent=previousLabel;
+    }
   });
   $("#transactionsTable").addEventListener("click",async event=>{
     const edit=event.target.closest("[data-edit-transaction]");
