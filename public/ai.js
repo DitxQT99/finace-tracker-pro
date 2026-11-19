@@ -113,6 +113,21 @@
           [["Kategori",draft.category],["Catatan",draft.note],["Tanggal",draft.date]].forEach(pair=>{const line=el("div","ai-draft-detail");line.append(el("span","",pair[0]),el("b","",pair[1]));details.append(line);});
           card.append(details);
           if(status==="pending"){
+            const activeAccounts=(window.greyFinanceState?.accounts||[]).filter(account=>!account.archivedAt);
+            const accountWrap=el("label","ai-account-select-wrap");
+            accountWrap.append(el("span","","Sumber dana transaksi"));
+            const accountSelect=el("select","ai-draft-account");
+            accountSelect.dataset.draftAccount=draft.id;
+            activeAccounts.forEach(account=>{
+              const option=document.createElement("option");
+              option.value=account.id;
+              option.textContent=(account.name||account.providerName||"Akun")+" · "+money(account.balance||0);
+              accountSelect.append(option);
+            });
+            if(draft.accountId)accountSelect.value=draft.accountId;
+            if(!activeAccounts.length)accountSelect.disabled=true;
+            accountWrap.append(accountSelect);
+            card.append(accountWrap);
             const actions=el("div","ai-draft-actions"),approve=el("button","ai-approve","✓ Approve"),reject=el("button","ai-reject","Tolak");
             approve.type="button";approve.dataset.aiAction="approve";approve.dataset.draftId=draft.id;
             reject.type="button";reject.dataset.aiAction="reject";reject.dataset.draftId=draft.id;
@@ -171,7 +186,13 @@
     if(action==="approve"&&!confirm("Simpan transaksi ini ke riwayat Grey Finance?"))return;
     button.disabled=true;
     try{
-      const result=await api("/api/assistant",{method:"POST",body:{action,draftId}});
+      const payload={action,draftId};
+      if(action==="approve"){
+        const picker=[...document.querySelectorAll("[data-draft-account]")].find(node=>node.dataset.draftAccount===draftId);
+        payload.accountId=picker?.value||"";
+        if(!payload.accountId)throw new Error("Pilih akun sumber dana terlebih dahulu.");
+      }
+      const result=await api("/api/assistant",{method:"POST",body:payload});
       state.drafts.set(draftId,{...draft,status:result.status,transactionId:result.transactionId||null});
       notify(action==="approve"?"Transaksi disimpan ke Grey Finance.":"Draft ditolak.");renderMessages();
       if(action==="approve")window.greyFinanceRefresh?.();
