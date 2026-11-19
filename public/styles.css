@@ -203,3 +203,8 @@
 @media(max-width:1100px){.accounts-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.provider-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:680px){.account-page-actions{width:100%;justify-content:flex-start}.accounts-total-panel{padding:18px}.accounts-grid{grid-template-columns:1fr}.account-card{padding:16px}.account-balance-line strong{font-size:16px}.provider-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:42vh}.account-modal-card{width:calc(100vw - 18px);max-height:calc(100dvh - 24px);border-radius:19px;padding:20px}.transfer-account-fields{grid-template-columns:1fr}.transfer-arrow{margin:0 auto;transform:rotate(0deg)}.account-choice-btn{min-height:50px}.account-history-row{gap:8px}.account-history-row>strong{font-size:9px}.account-kind-tabs button{font-size:9px;padding:10px 5px}}
 @media(max-width:420px){.provider-grid{gap:6px}.provider-option{padding:7px;gap:6px}.provider-option span:last-child{font-size:8px}.account-card-actions button{font-size:8px}.account-page-actions .btn{font-size:10px;padding:10px 11px}}
+
+/* Grey AI transaction draft account picker */
+.ai-account-select-wrap{display:grid;gap:7px;margin-top:12px;color:var(--muted);font-size:9px}
+.ai-account-select-wrap select{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:10px}
+.ai-account-select-wrap select:disabled{opacity:.55}
