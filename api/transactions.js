@@ -22,22 +22,29 @@ module.exports=async function(req,res){
     if(req.method==="POST"||req.method==="PATCH"){
       const body=req.body||{},type=body.type,amount=Number(body.amount);
       const category=String(body.category||"").trim(),note=String(body.note||"").trim().slice(0,160),date=body.date;
+      const requestId=req.method==="POST"?String(body.requestId||"").trim():"";
       if(!["income","expense"].includes(type)||!Number.isFinite(amount)||amount<=0||amount>999999999999999||
-        !category||category.length>60||!validDate(date)){
+        !category||category.length>60||!validDate(date)||
+        (requestId&&!/^[A-Za-z0-9_-]{8,80}$/.test(requestId))){
         return res.status(400).json({error:"Data transaksi tidak valid."});
       }
       const id=req.method==="PATCH"?String(body.id||""):randomUUID();
-      let saved=null,problem=null;
+      let saved=null,problem=null,alreadyProcessed=false;
       const user=await mutateUser(session.id,data=>{
-        saved=null;problem=null;
+        saved=null;problem=null;alreadyProcessed=false;
         ensureAccountData(data);
         data.transactions=Array.isArray(data.transactions)?data.transactions:[];
+        if(req.method==="POST"&&requestId){
+          const prior=data.transactions.find(row=>row.clientRequestId===requestId);
+          if(prior){saved=prior;alreadyProcessed=true;return data;}
+        }
         const account=activeAccount(data,String(body.accountId||""))||
           (!body.accountId?data.accounts.find(item=>!item.archivedAt):null);
         if(!account){problem="Pilih sumber dana yang masih aktif.";return data;}
         const item={id,type,amount,category,note,date,accountId:account.id,
           accountName:account.name,accountProvider:account.provider,
           createdAt:new Date().toISOString()};
+        if(requestId)item.clientRequestId=requestId;
         if(req.method==="PATCH"){
           const index=data.transactions.findIndex(row=>row.id===id);
           if(index>=0){
@@ -60,7 +67,7 @@ module.exports=async function(req,res){
       if(!user)return res.status(404).json({error:"Akun tidak ditemukan."});
       if(problem)return res.status(400).json({error:problem});
       if(!saved)return res.status(404).json({error:"Transaksi tidak ditemukan."});
-      return res.status(req.method==="POST"?201:200).json({transaction:saved});
+      return res.status(req.method==="POST"&&!alreadyProcessed?201:200).json({transaction:saved,alreadyProcessed});
     }
     if(req.method==="DELETE"){
       const id=String(req.query.id||"");
